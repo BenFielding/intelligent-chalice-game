@@ -1,20 +1,56 @@
 #!/usr/bin/python
 
 try:
-    import pygame, sys, math
+    import pygame
+    import sys
+    import math
+    import random
     from pygame.locals import *
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
 
 
+class Projectile(pygame.sprite.Sprite):
+    """The base class for all projectiles
+    Returns: A projectile object
+    Functions:
+    Attributes:"""
+
+    def __init__(self, image, rect, direction):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.transform.scale(image, (16, 16))
+        self.rect = rect.inflate(-16, -16)
+        screen = pygame.display.get_surface()
+        self.area = screen.get_rect()
+        self.direction = direction
+
+    def update(self,  magnitude):
+        newpos = self.calcnewpos(self.rect, self.direction, magnitude)
+        self.rect = newpos
+
+    def calcnewpos(self, rect, direction, magnitude):
+        if direction == 'up':
+            # move up
+            return rect.move(0, -magnitude)
+        elif direction == 'down':
+            # move down
+            return rect.move(0, +magnitude)
+        elif direction == 'left':
+            # move left
+            return rect.move(-magnitude, 0)
+        elif direction == 'right':
+            # move right
+            return rect.move(+magnitude, 0)
+
+
 class Fighter(pygame.sprite.Sprite):
     """The base class for all fighters
     Returns: A fighter object
     Functions: update, calcNewPos
-    Attributes: area, vector"""
+    Attributes:"""
 
-    def __init__(self, imagefile, x, y):
+    def __init__(self, imagefile):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(imagefile)
         if self.image.get_alpha() is None:
@@ -24,24 +60,27 @@ class Fighter(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         screen = pygame.display.get_surface()
         self.area = screen.get_rect()
+        self.direction = 'none'
 
-    def update(self, direction):
-        newpos = self.calcnewpos(self.rect, direction)
-        self.rect = newpos
+    def update(self, magnitude):
+        if self.direction != 'none':
+            newpos = self.calcnewpos(self.rect, self.direction, magnitude)
+            self.rect = newpos
+            self.rect.clamp_ip(self.area)
 
-    def calcnewpos(self, rect, direction):
+    def calcnewpos(self, rect, direction, magnitude):
         if direction == 'up':
             # move up
-            return rect.move(0, -16)
+            return rect.move(0, -magnitude)
         elif direction == 'down':
             # move down
-            return rect.move(0, +16)
+            return rect.move(0, +magnitude)
         elif direction == 'left':
             # move left
-            return rect.move(-16, 0)
+            return rect.move(-magnitude, 0)
         elif direction == 'right':
             # move right
-            return rect.move(+16, 0)
+            return rect.move(+magnitude, 0)
 
 
 class Player(Fighter):
@@ -57,15 +96,21 @@ class Enemy(Fighter):
     Functions: update, calcNewPos
     Attributes: """
 
+    def __init__(self, imagefile):
+        Fighter.__init__(self, imagefile)
+        self.direction = 'right'
+        self.update(736)
+        self.direction = 'none'
 
-
-
+    def randommove(self):
+        directionlist = ['up', 'down', 'left', 'right', 'none']
+        self.direction = random.choice(directionlist)
 
 
 def main():
     # Initialise screen
     pygame.init()
-    screen = pygame.display.set_mode((1024, 768))
+    screen = pygame.display.set_mode((768, 768))
     pygame.display.set_caption('Artificial intelligence assignment')
 
     # Fill background
@@ -75,10 +120,23 @@ def main():
 
     # Initialise players
     global player1
-    player1 = Player('/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter.png', 0, 0)
+    player1 = Player('/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter.png')
+
+    # Initialise enemies
+    global enemy1
+    enemy1 = Enemy('/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter.png')
+
+    # List of all active fighters
+    fighterlist = pygame.sprite.Group()
 
     # Initialise sprites
     playersprite = pygame.sprite.RenderPlain(player1)
+    fighterlist.add(playersprite)
+    enemysprite = pygame.sprite.RenderPlain(enemy1)
+    fighterlist.add(enemysprite)
+
+    # List of all active projectiles
+    projectilelist = pygame.sprite.Group()
 
     # Blit to the screen
     screen.blit(background, (0, 0))
@@ -91,23 +149,38 @@ def main():
     while True:
         clock.tick(30)
 
-        screen.blit(background, player1.rect, player1.rect)
+        for fighter in fighterlist:
+            screen.blit(background, fighter.rect, fighter.rect)
+        for projectile in projectilelist:
+            screen.blit(background, projectile.rect, projectile.rect)
 
         for event in pygame.event.get():
             if event.type == QUIT:
                 return
             elif event.type == KEYDOWN:
                 if event.key == K_w:
-                    player1.update('up')
+                    player1.direction = 'up'
                 elif event.key == K_s:
-                    player1.update('down')
+                    player1.direction = 'down'
                 elif event.key == K_a:
-                    player1.update('left')
+                    player1.direction = 'left'
                 elif event.key == K_d:
-                    player1.update('right')
+                    player1.direction = 'right'
+                else:
+                    if event.key == K_SPACE:
+                        projectile = Projectile(player1.image, player1.rect, 'right')
+                        projectilelist.add(projectile)
+            elif event.type == KEYUP:
+                if event.key in [K_w, K_s, K_a, K_d]:
+                    player1.direction = 'none'
 
+        enemy1.randommove()
 
-        playersprite.draw(screen)
+        fighterlist.update(16)
+        projectilelist.update(32)
+
+        fighterlist.draw(screen)
+        projectilelist.draw(screen)
         pygame.display.flip()
 
 if __name__ == '__main__':
