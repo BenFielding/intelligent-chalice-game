@@ -171,7 +171,13 @@ def main():
                         projectile = Projectile(player1.image, player1.rect, 'right')
                         projectilelist.add(projectile)
             elif event.type == KEYUP:
-                if event.key in [K_w, K_s, K_a, K_d]:
+                if event.key == K_w and player1.direction == 'up':
+                    player1.direction = 'none'
+                elif event.key == K_s and player1.direction == 'down':
+                    player1.direction = 'none'
+                elif event.key == K_a and player1.direction == 'left':
+                    player1.direction = 'none'
+                elif event.key == K_d and player1.direction == 'right':
                     player1.direction = 'none'
 
         enemy1.randommove()
