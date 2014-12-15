@@ -3,108 +3,37 @@
 try:
     import pygame
     import sys
-    import math
-    import random
     from pygame.locals import *
+    from block import Block
+    from fighter import Fighter
+    from enemy import Enemy
+    from player import Player
+    from projectile import Projectile
+    from obstacle import Obstacle
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
 
 
-class Projectile(pygame.sprite.Sprite):
-    """The base class for all projectiles
-    Returns: A projectile object
-    Functions:
-    Attributes:"""
-
-    def __init__(self, image, rect, direction):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.transform.scale(image, (16, 16))
-        self.rect = rect.inflate(-16, -16)
-        screen = pygame.display.get_surface()
-        self.area = screen.get_rect()
-        self.direction = direction
-
-    def update(self,  magnitude):
-        newpos = self.calcnewpos(self.rect, self.direction, magnitude)
-        self.rect = newpos
-
-    def calcnewpos(self, rect, direction, magnitude):
-        if direction == 'up':
-            # move up
-            return rect.move(0, -magnitude)
-        elif direction == 'down':
-            # move down
-            return rect.move(0, +magnitude)
-        elif direction == 'left':
-            # move left
-            return rect.move(-magnitude, 0)
-        elif direction == 'right':
-            # move right
-            return rect.move(+magnitude, 0)
+def createobstacle():
+    obstacle = Obstacle('/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate.png')
+    if not pygame.sprite.spritecollide(obstacle, blocklist, False, pygame.sprite.collide_circle):
+        obstaclelist.add(obstacle)
+        blocklist.add(obstacle)
+    else:
+        obstacle.kill()
+        createobstacle()
 
 
-class Fighter(pygame.sprite.Sprite):
-    """The base class for all fighters
-    Returns: A fighter object
-    Functions: update, calcNewPos
-    Attributes:"""
-
-    def __init__(self, imagefile):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(imagefile)
-        if self.image.get_alpha() is None:
-            self.image = self.image.convert()
-        else:
-            self.image = self.image.convert_alpha()
-        self.rect = self.image.get_rect()
-        screen = pygame.display.get_surface()
-        self.area = screen.get_rect()
-        self.direction = 'none'
-
-    def update(self, magnitude):
-        if self.direction != 'none':
-            newpos = self.calcnewpos(self.rect, self.direction, magnitude)
-            self.rect = newpos
-            self.rect.clamp_ip(self.area)
-
-    def calcnewpos(self, rect, direction, magnitude):
-        if direction == 'up':
-            # move up
-            return rect.move(0, -magnitude)
-        elif direction == 'down':
-            # move down
-            return rect.move(0, +magnitude)
-        elif direction == 'left':
-            # move left
-            return rect.move(-magnitude, 0)
-        elif direction == 'right':
-            # move right
-            return rect.move(+magnitude, 0)
-
-
-class Player(Fighter):
-    """A Player character, inherits from Fighter
-    Returns: A player object
-    Functions: update, calcNewPos
-    Attributes: """
-
-
-class Enemy(Fighter):
-    """An enemy character, inherits from Fighter
-    Returns: An enemy object
-    Functions: update, calcNewPos
-    Attributes: """
-
-    def __init__(self, imagefile):
-        Fighter.__init__(self, imagefile)
-        self.direction = 'right'
-        self.update(736)
-        self.direction = 'none'
-
-    def randommove(self):
-        directionlist = ['up', 'down', 'left', 'right', 'none']
-        self.direction = random.choice(directionlist)
+def createenemy(imagefile):
+    enemy = Enemy(imagefile)
+    if not pygame.sprite.spritecollide(enemy, blocklist, False, pygame.sprite.collide_circle):
+        fighterlist.add(enemy)
+        blocklist.add(enemy)
+    else:
+        enemy.kill()
+        createenemy()
+    return enemy
 
 
 def main():
@@ -118,25 +47,35 @@ def main():
     background = background.convert()
     background.fill((0, 0, 0))
 
-    # Initialise players
-    global player1
-    player1 = Player('/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter.png')
-
-    # Initialise enemies
-    global enemy1
-    enemy1 = Enemy('/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter.png')
+    # Initialise sprite groups
+    # List of all active blocks
+    global blocklist
+    blocklist = pygame.sprite.Group()
 
     # List of all active fighters
+    global fighterlist
     fighterlist = pygame.sprite.Group()
 
-    # Initialise sprites
-    playersprite = pygame.sprite.RenderPlain(player1)
-    fighterlist.add(playersprite)
-    enemysprite = pygame.sprite.RenderPlain(enemy1)
-    fighterlist.add(enemysprite)
-
     # List of all active projectiles
+    global projectilelist
     projectilelist = pygame.sprite.Group()
+
+    # List of all active obstacles
+    global obstaclelist
+    obstaclelist = pygame.sprite.Group()
+
+    # Initialise obstacles
+    for i in range(0, 50):
+        createobstacle()
+
+    # Initialise players
+    global player1
+    player1 = Player('/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter.png', fighterlist, blocklist)
+
+    # Initialise enemies
+    # TODO: Use OCEAN model for enemies
+    global enemyaggressive
+    enemyaggressive = createenemy('/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter.png')
 
     # Blit to the screen
     screen.blit(background, (0, 0))
@@ -147,12 +86,13 @@ def main():
 
     # Event loop
     while True:
-        clock.tick(30)
-
+        clock.tick(10)
         for fighter in fighterlist:
             screen.blit(background, fighter.rect, fighter.rect)
         for projectile in projectilelist:
             screen.blit(background, projectile.rect, projectile.rect)
+        for obstacle in obstaclelist:
+            screen.blit(background, obstacle.rect, obstacle.rect)
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -180,13 +120,12 @@ def main():
                 elif event.key == K_d and player1.direction == 'right':
                     player1.direction = 'none'
 
-        enemy1.randommove()
+        enemyaggressive.randommove()
 
-        fighterlist.update(16)
+        fighterlist.update(1, obstaclelist)
         projectilelist.update(32)
 
-        fighterlist.draw(screen)
-        projectilelist.draw(screen)
+        blocklist.draw(screen)
         pygame.display.flip()
 
 if __name__ == '__main__':
