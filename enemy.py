@@ -13,14 +13,18 @@ class Enemy(Fighter):
     Functions: update, calcNewPos
     Attributes: """
 
-    def __init__(self, imagefile, *groups):
-        super(Enemy, self).__init__(imagefile, *groups)
+    def __init__(self, name, imagelist, *groups):
+        super(Enemy, self).__init__(name, imagelist, *groups)
         x = random.randint(0, 23)
         y = random.randint(0, 23)
-        self.location = {x, y}
+        self.location = {'x': x, 'y': y}
         self.rect = self.rect.move(x*32, y*32)
-        self.direction = 'none'
 
     def randommove(self):
         directionlist = ['up', 'down', 'left', 'right', 'none']
-        self.direction = random.choice(directionlist)
+        direction = random.choice(directionlist)
+        if direction == 'none':
+            self.moving = False
+        else:
+            self.direction = direction
+            self.moving = True

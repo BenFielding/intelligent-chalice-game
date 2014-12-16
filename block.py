@@ -12,15 +12,18 @@ class Block(pygame.sprite.Sprite):
     Functions:
     Attributes:"""
 
-    def __init__(self, imagefile, *groups):
+    def __init__(self, imagelist, *groups):
         pygame.sprite.Sprite.__init__(self, *groups)
-        self.image = pygame.image.load(imagefile)
-        if self.image.get_alpha() is None:
-            self.image = self.image.convert()
-        else:
-            self.image = self.image.convert_alpha()
+        self.imagelist = {}
+        for key, imagefile in imagelist.iteritems():
+            self.imagelist[key] = pygame.image.load(imagefile)
+            if self.imagelist[key].get_alpha() is None:
+                self.imagelist[key] = self.imagelist[key].convert()
+            else:
+                self.imagelist[key] = self.imagelist[key].convert_alpha()
+        self.image = self.imagelist.itervalues().next()
         self.rect = self.image.get_rect()
         self.screen = pygame.display.get_surface()
         self.area = self.screen.get_rect()
-        self.location = {0, 0}
+        self.location = {'x': 0, 'y': 0}
         self.radius = 8

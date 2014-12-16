@@ -12,21 +12,25 @@ class Fighter(Block):
     Functions: update, calcNewPos
     Attributes:"""
 
-    def __init__(self, imagefile, *groups):
+    def __init__(self, name, imagefile, *groups):
         super(Fighter, self).__init__(imagefile, *groups)
-        self.direction = 'none'
+        self.name = name
+        self.direction = 'down'
+        self.image = self.imagelist[self.direction]
+        self.moving = False
 
     def update(self, magnitude, obstaclelist):
-        if self.direction != 'none':
+        if self.moving:
             oldpos = self.rect
             newpos = self.calcnewpos(self.rect, self.direction, magnitude)
             self.rect = newpos
             if pygame.sprite.spritecollide(self, obstaclelist, False, pygame.sprite.collide_circle):
                 self.rect = oldpos
             self.rect.clamp_ip(self.area)
-            self.location = {self.rect.x/32, self.rect.y/32}
+            self.location = {'x': self.rect.x/32, 'y': self.rect.y/32}
 
     def calcnewpos(self, rect, direction, magnitude):
+        self.image = self.imagelist[direction]
         if direction == 'up':
             # move up
             return rect.move(0, -(magnitude*32))
