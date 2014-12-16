@@ -19,31 +19,23 @@ except ImportError, error:
 
 class Node(object):
 
-    def __init__(self, x, y, goal = False):
+    def __init__(self, x, y):
         self.location = {'x': x, 'y': y}
-        self.goal = goal
+        self.goal = False
         self.parent = None
         self.priority = 999999
+        self.cost = 1
 
     def __cmp__(self, other):
         return cmp(self.priority, other.priority)
 
 class Astar(object):
 
-    # def __init__(self, goal):
-        # nodelist = []
-        # for x in range(24):
-        #     for y in range(24):
-        #         if goal['x'] == x and goal['y'] == y:
-        #             nodelist.append(Node(x, y, True))
-        #         else:
-        #             nodelist.append(Node(x, y))
-        # print nodelist
-
     def traverse(self, startnode, goal, nodelist, background):
         print 'called traverse'
         openlist = PriorityQueue()
         startnode.priority = 0
+        startnode.cost = 0
         openlist.put(startnode)
 
         while not openlist.empty():
@@ -70,10 +62,15 @@ class Astar(object):
 
                 reversepath(current, startnode, current)
                 break
+
             for neighbour in self.getneighbours(current, nodelist):
-                if neighbour.parent is None:
-                    neighbour.priority = self.distancefromgoal(neighbour, goal)
-                    print neighbour.priority
+                newcost = current.cost + neighbour.cost
+                print 'cost: {0} neighbour cost: {1} newcost: {2}'.format(current.cost, neighbour.cost, newcost)
+                if neighbour.parent is None or newcost < neighbour.cost:
+                    print 'new path node chosen'
+                    neighbour.cost = newcost
+                    neighbour.priority = self.distancefromgoal(neighbour, goal) + newcost
+                    print 'cost: {0} priority: {1}'.format(neighbour.cost, neighbour.priority)
                     openlist.put(neighbour)
                     neighbour.parent = current
 
@@ -94,6 +91,15 @@ class Astar(object):
         return neighbours
 
 
+def createfighter(name, imagelist, fightertype = Player):
+    fighter = fightertype(name, imagelist)
+    if pygame.sprite.spritecollide(fighter, blocklist, False, pygame.sprite.collide_circle):
+        fighter.kill()
+        fighter = createfighter(name, imagelist, fightertype)
+    fighterlist.add(fighter)
+    blocklist.add(fighter)
+    return fighter
+
 def createobstacle():
     obstacleimagelist = {}
     obstacleimagelist['strong'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate_metal.png'
@@ -107,26 +113,6 @@ def createobstacle():
         createobstacle()
 
 
-def createenemy(name, imagelist):
-    enemy = Enemy(name, imagelist)
-    if not pygame.sprite.spritecollide(enemy, blocklist, False, pygame.sprite.collide_circle):
-        fighterlist.add(enemy)
-        blocklist.add(enemy)
-    else:
-        enemy.kill()
-        createenemy(name, imagelist)
-    return enemy
-
-def createplayer(name, imagelist):
-    player = Player(name, imagelist)
-    if not pygame.sprite.spritecollide(player, blocklist, False, pygame.sprite.collide_circle):
-        fighterlist.add(player)
-        blocklist.add(player)
-    else:
-        player.kill()
-        createplayer(name, imagelist)
-    return player
-
 def creategoal():
     goalimagelist = {}
     goalimagelist['goal'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice.png'
@@ -134,8 +120,9 @@ def creategoal():
     if not pygame.sprite.spritecollide(goal, blocklist, False, pygame.sprite.collide_circle):
         blocklist.add(goal)
     else:
+        print 'Goal creation blocked!'
         goal.kill()
-        createenemy(goalimagelist)
+        goal = createenemy(goalimagelist)
     return goal
 
 
@@ -207,7 +194,7 @@ def main():
     goal = creategoal()
 
     # Initialise obstacles
-    for i in range(0, 50):
+    for i in range(0, 500):
         createobstacle()
 
     # Initialise players
@@ -216,7 +203,7 @@ def main():
     playerimagelist['down'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_down.png'
     playerimagelist['left'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_left.png'
     playerimagelist['right'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_right.png'
-    player1 = createplayer('Player one', playerimagelist) # Player(playerimagelist, fighterlist, blocklist)
+    player1 = createfighter('Player one', playerimagelist, Player)
 
     # Initialise enemies
     # TODO: Use OCEAN model for enemies
@@ -225,7 +212,7 @@ def main():
     enemyimagelist['down'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_down.png'
     enemyimagelist['left'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_left.png'
     enemyimagelist['right'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_right.png'
-    enemyaggressive = createenemy('Aggressive enemy', enemyimagelist)
+    enemyaggressive = createfighter('Aggressive enemy', enemyimagelist, Enemy)
 
     # Blit to the screen
     screen.blit(background, (0, 0))
@@ -238,14 +225,19 @@ def main():
     nodelist = []
     for x in range(24):
         for y in range(24):
+            node = Node(x, y)
+            for obstacle in obstaclelist:
+                if obstacle.location['x'] == x and obstacle.location['y'] == y:
+                    if obstacle.strength == 'weak':
+                        node.cost = 5
+                    elif obstacle.strength == 'strong':
+                        node.cost = 10
             if goal.location['x'] == x and goal.location['y'] == y:
-                goalnode = Node(x, y, True)
-                nodelist.append(goalnode)
+                goalnode = node
+                node.goal = True
             elif enemyaggressive.location['x'] == x and enemyaggressive.location['y'] == y:
-                startnode = Node(x, y)
-                nodelist.append(startnode)
-            else:
-                nodelist.append(Node(x, y))
+                startnode = node
+            nodelist.append(node)
 
     # Test visualisations
     global visualnodelist

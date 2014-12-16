@@ -18,11 +18,14 @@ class Obstacle(Block):
         y = random.randint(0, 23)
         self.location = {'x': x, 'y': y}
         self.rect = self.rect.move(x*32, y*32)
+        self.strength = None
         self.hp = random.randint(1, 10)
         self.update()
 
     def update(self):
         if self.hp > 5:
+            self.strength = 'strong'
             self.image = self.imagelist['strong']
         else:
+            self.strength = 'weak'
             self.image = self.imagelist['weak']
