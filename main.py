@@ -5,6 +5,7 @@ try:
     import sys
     from pygame.locals import *
     from Queue import Queue
+    from Queue import PriorityQueue
     from block import Block
     from fighter import Fighter
     from enemy import Enemy
@@ -21,6 +22,11 @@ class Node(object):
     def __init__(self, x, y, goal = False):
         self.location = {'x': x, 'y': y}
         self.goal = goal
+        self.parent = None
+        self.priority = 999999
+
+    def __cmp__(self, other):
+        return cmp(self.priority, other.priority)
 
 class Astar(object):
 
@@ -34,20 +40,45 @@ class Astar(object):
         #             nodelist.append(Node(x, y))
         # print nodelist
 
-    def traverse(self, startnode, nodelist):
+    def traverse(self, startnode, goal, nodelist, background):
         print 'called traverse'
-        openlist = Queue()
+        openlist = PriorityQueue()
+        startnode.priority = 0
         openlist.put(startnode)
-        closedlist = []
 
         while not openlist.empty():
             current = openlist.get()
+            # Test visualisations
+            createvisualnode(current.location['x'], current.location['y'], background,
+                             '/home/ben/Documents/uni_git/artificial_intelligence/sprites/yellow_fighter_up.png')
             if current.goal:
                 print 'Found goal at {0} - exiting loop'.format(current.location)
+
+                def reversepath(currentnode, startnode, goalnode):
+                    if currentnode is startnode:
+                        print 'Reached fighter'
+                        createvisualnode(currentnode.location['x'], currentnode.location['y'], background,
+                                         '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_up.png')
+                    elif currentnode is goalnode:
+                        createvisualnode(current.location['x'], current.location['y'], background,
+                             '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice.png')
+                        reversepath(currentnode.parent, startnode, goalnode)
+                    else:
+                        createvisualnode(currentnode.location['x'], currentnode.location['y'], background,
+                                         '/home/ben/Documents/uni_git/artificial_intelligence/sprites/cyan_fighter_up.png')
+                        reversepath(currentnode.parent, startnode, goalnode)
+
+                reversepath(current, startnode, current)
                 break
             for neighbour in self.getneighbours(current, nodelist):
-                if neighbour not in closedlist:
+                if neighbour.parent is None:
+                    neighbour.priority = self.distancefromgoal(neighbour, goal)
+                    print neighbour.priority
                     openlist.put(neighbour)
+                    neighbour.parent = current
+
+    def distancefromgoal(self, node, goal):
+        return abs(node.location['x'] - goal.location['x']) + abs(node.location['y'] - goal.location['y'])
 
     # Get neighbours from a node (add boundary checks here?)
     def getneighbours(self, node, nodelist):
@@ -129,6 +160,20 @@ def attackobstacle(location, direction):
         if foundobstacle.hp <= 0:
             foundobstacle.kill()
 
+# Test visualisations
+def createvisualnode(x, y, background, imagefile):
+    screen = pygame.display.get_surface()
+    for visualnode in visualnodelist:
+        screen.blit(background, visualnode.rect, visualnode.rect)
+    visualimagelist = {}
+    visualimagelist['image'] = imagefile
+    visualnode = Block(visualimagelist)
+    visualnode.rect = visualnode.rect.move(x*32, y*32)
+    pygame.sprite.spritecollide(visualnode, visualnodelist, True, pygame.sprite.collide_circle)
+    visualnodelist.add(visualnode)
+    visualnodelist.draw(screen)
+    pygame.display.flip()
+
 
 def main():
     # Initialise screen
@@ -193,17 +238,22 @@ def main():
     nodelist = []
     for x in range(24):
         for y in range(24):
-            print "x: {0}, y: {1}".format(x, y)
             if goal.location['x'] == x and goal.location['y'] == y:
-                nodelist.append(Node(x, y, True))
+                goalnode = Node(x, y, True)
+                nodelist.append(goalnode)
             elif enemyaggressive.location['x'] == x and enemyaggressive.location['y'] == y:
-                start = Node(x, y)
-                nodelist.append(start)
+                startnode = Node(x, y)
+                nodelist.append(startnode)
             else:
                 nodelist.append(Node(x, y))
 
+    # Test visualisations
+    global visualnodelist
+    visualnodelist = pygame.sprite.Group()
+
     astar = Astar()
-    astar.traverse(start, nodelist)
+    astar.traverse(startnode, goalnode, nodelist, background)
+
 
     # Event loop
     while True:

@@ -12,8 +12,8 @@ class Obstacle(Block):
     Function:
     Attributes:"""
 
-    def __init__(self, imagefile, *groups):
-        super(Obstacle, self).__init__(imagefile, *groups)
+    def __init__(self, imagelist, *groups):
+        super(Obstacle, self).__init__(imagelist, *groups)
         x = random.randint(0, 23)
         y = random.randint(0, 23)
         self.location = {'x': x, 'y': y}
