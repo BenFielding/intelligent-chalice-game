@@ -60,7 +60,7 @@ def creategoal():
     return goal
 
 
-def attackobstacle(location, direction):dd
+def attackobstacle(location, direction):
     objlocation = {'x': location['x'], 'y': location['y']}
     if direction == 'up':
         objlocation['y'] = location['y'] - 1
