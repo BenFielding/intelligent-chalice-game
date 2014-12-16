@@ -4,6 +4,7 @@ try:
     import pygame
     import sys
     from pygame.locals import *
+    from Queue import Queue
     from block import Block
     from fighter import Fighter
     from enemy import Enemy
@@ -13,6 +14,53 @@ try:
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
+
+
+class Node(object):
+
+    def __init__(self, x, y, goal = False):
+        self.location = {'x': x, 'y': y}
+        self.goal = goal
+
+class Astar(object):
+
+    # def __init__(self, goal):
+        # nodelist = []
+        # for x in range(24):
+        #     for y in range(24):
+        #         if goal['x'] == x and goal['y'] == y:
+        #             nodelist.append(Node(x, y, True))
+        #         else:
+        #             nodelist.append(Node(x, y))
+        # print nodelist
+
+    def traverse(self, startnode, nodelist):
+        print 'called traverse'
+        openlist = Queue()
+        openlist.put(startnode)
+        closedlist = []
+
+        while not openlist.empty():
+            current = openlist.get()
+            if current.goal:
+                print 'Found goal at {0} - exiting loop'.format(current.location)
+                break
+            for neighbour in self.getneighbours(current, nodelist):
+                if neighbour not in closedlist:
+                    openlist.put(neighbour)
+
+    # Get neighbours from a node (add boundary checks here?)
+    def getneighbours(self, node, nodelist):
+        neighbours = []
+        locations = [{'x': node.location['x'] + 1, 'y': node.location['y']},
+                     {'x': node.location['x'], 'y': node.location['y'] + 1},
+                     {'x': node.location['x'] - 1, 'y': node.location['y']},
+                     {'x': node.location['x'], 'y': node.location['y'] - 1}]
+        for location in locations:
+            for node in nodelist:
+                if node.location == location:
+                    neighbours.append(node)
+        return neighbours
 
 
 def createobstacle():
@@ -110,8 +158,6 @@ def main():
     global obstaclelist
     obstaclelist = pygame.sprite.Group()
 
-    # TODO: Graph of all locations
-
     # Initialise goal
     goal = creategoal()
 
@@ -143,6 +189,22 @@ def main():
     # Initialise clock
     clock = pygame.time.Clock()
 
+    # Initialise Astar
+    nodelist = []
+    for x in range(24):
+        for y in range(24):
+            print "x: {0}, y: {1}".format(x, y)
+            if goal.location['x'] == x and goal.location['y'] == y:
+                nodelist.append(Node(x, y, True))
+            elif enemyaggressive.location['x'] == x and enemyaggressive.location['y'] == y:
+                start = Node(x, y)
+                nodelist.append(start)
+            else:
+                nodelist.append(Node(x, y))
+
+    astar = Astar()
+    astar.traverse(start, nodelist)
+
     # Event loop
     while True:
         clock.tick(5)
@@ -172,6 +234,7 @@ def main():
                 else:
                     if event.key == K_SPACE:
                         attackobstacle(player1.location, player1.direction)
+                print player1.location
             elif event.type == KEYUP:
                 if event.key == K_w and player1.direction == 'up':
                     player1.moving = False
