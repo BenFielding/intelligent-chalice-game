@@ -115,7 +115,7 @@ def main():
     goal = creategoal()
 
     # Initialise obstacles
-    for i in range(0, 500):
+    for i in range(0, 100):
         createobstacle()
 
     imagedirectionlist = ['up', 'down', 'left', 'right']
@@ -130,8 +130,8 @@ def main():
 
     # Initialise enemies
     # TODO: Use OCEAN model for enemies?
-    enemycolourlist = ['red', 'yellow', 'pink', 'cyan']
-
+    # enemycolourlist = ['red', 'yellow', 'pink', 'cyan']
+    enemycolourlist = ['red']
     for enemycolour in enemycolourlist:
         enemyimagelist = {}
         for direction in imagedirectionlist:
@@ -152,6 +152,10 @@ def main():
     for enemy in enemylist:
         enemy.path = Astar(obstaclelist, enemy, goal).traverse()
 
+    # Initialise player controls
+    directionqueue = LifoQueue()
+    keyeventdict = {'up': False, 'down': False, 'left': False, 'right': False, 'space': False}
+
     # Event loop
     while True:
         clock.tick(5)
@@ -165,30 +169,48 @@ def main():
                 return
             elif event.type == KEYDOWN:
                 if event.key == K_w:
+                    keyeventdict['up'] = True
+                    directionqueue.put('up')
                     player1.direction = 'up'
                     player1.moving = True
                 elif event.key == K_s:
+                    keyeventdict['down'] = True
+                    directionqueue.put('down')
                     player1.direction = 'down'
                     player1.moving = True
                 elif event.key == K_a:
+                    keyeventdict['left'] = True
+                    directionqueue.put('left')
                     player1.direction = 'left'
                     player1.moving = True
                 elif event.key == K_d:
+                    keyeventdict['right'] = True
+                    directionqueue.put('right')
                     player1.direction = 'right'
                     player1.moving = True
-                else:
-                    if event.key == K_SPACE:
-                        attackobstacle(player1.location, player1.direction)
+                elif event.key == K_SPACE:
+                        keyeventdict['space'] = True
             elif event.type == KEYUP:
-                if event.key == K_w and player1.direction == 'up':
-                    player1.moving = False
-                elif event.key == K_s and player1.direction == 'down':
-                    player1.moving = False
-                elif event.key == K_a and player1.direction == 'left':
-                    player1.moving = False
-                elif event.key == K_d and player1.direction == 'right':
-                    player1.moving = False
-
+                if event.key == K_w:
+                    keyeventdict['up'] = False
+                elif event.key == K_s:
+                    keyeventdict['down'] = False
+                elif event.key == K_a:
+                    keyeventdict['left'] = False
+                elif event.key == K_d:
+                    keyeventdict['right'] = False
+                elif event.key == K_SPACE:
+                    keyeventdict['space'] = False
+                if event.key in [K_w, K_s, K_a, K_d] and player1.moving:
+                    if not keyeventdict[player1.direction]:
+                        while not directionqueue.empty():
+                            player1.direction = directionqueue.get()
+                            if keyeventdict[player1.direction]:
+                                break
+                        if directionqueue.empty() and not keyeventdict[player1.direction]:
+                            player1.moving = False
+        if keyeventdict['space']:
+            attackobstacle(player1.location, player1.direction)
         playerlist.update(1, obstaclelist)
 
         for enemy in enemylist:
