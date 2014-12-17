@@ -19,12 +19,15 @@ class Enemy(Fighter):
         y = random.randint(0, 23)
         self.location = {'x': x, 'y': y}
         self.rect = self.rect.move(x*32, y*32)
+        self.path = None
+        self.direction = None
+        self.attacking = False
+        self.moving = True
 
-    def randommove(self):
-        directionlist = ['up', 'down', 'left', 'right', 'none']
-        direction = random.choice(directionlist)
-        if direction == 'none':
-            self.moving = False
+    def attemptmove(self, magnitude, obstaclelist):
+        if self.attacking:
+            self.attacking = not self.update(magnitude, obstaclelist)
         else:
-            self.direction = direction
-            self.moving = True
+            self.direction = self.path.get()
+            self.attacking = not self.update(magnitude, obstaclelist)
+        return not self.attacking

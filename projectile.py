@@ -12,7 +12,7 @@ class Projectile(pygame.sprite.Sprite):
     Attributes:"""
 
     def __init__(self, image, rect, direction):
-        super(Projectile, self).__init__(self)
+        super(Projectile, self).__init__()
         self.image = pygame.transform.scale(image, (16, 16))
         self.rect = rect.inflate(-16, -16)
         screen = pygame.display.get_surface()

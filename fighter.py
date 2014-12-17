@@ -26,8 +26,12 @@ class Fighter(Block):
             self.rect = newpos
             if pygame.sprite.spritecollide(self, obstaclelist, False, pygame.sprite.collide_circle):
                 self.rect = oldpos
+                success = False
+            else:
+                success = True
             self.rect.clamp_ip(self.area)
             self.location = {'x': self.rect.x/32, 'y': self.rect.y/32}
+            return success
 
     def calcnewpos(self, rect, direction, magnitude):
         self.image = self.imagelist[direction]

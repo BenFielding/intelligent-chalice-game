@@ -3,9 +3,9 @@
 try:
     import pygame
     import sys
+    import random
     from pygame.locals import *
-    from Queue import Queue
-    from Queue import PriorityQueue
+    from Queue import *
     from block import Block
     from fighter import Fighter
     from enemy import Enemy
@@ -25,54 +25,46 @@ class Node(object):
         self.parent = None
         self.priority = 999999
         self.cost = 1
+        self.costsofar = 0
+        self.direction = 'none'
 
     def __cmp__(self, other):
         return cmp(self.priority, other.priority)
 
 class Astar(object):
 
-    def traverse(self, startnode, goal, nodelist, background):
-        print 'called traverse'
+    def traverse(self, startnode, goal, nodelist):
         openlist = PriorityQueue()
+        chosenpath = LifoQueue()
         startnode.priority = 0
         startnode.cost = 0
         openlist.put(startnode)
 
         while not openlist.empty():
             current = openlist.get()
-            # Test visualisations
-            createvisualnode(current.location['x'], current.location['y'], background,
-                             '/home/ben/Documents/uni_git/artificial_intelligence/sprites/yellow_fighter_up.png')
-            if current.goal:
-                print 'Found goal at {0} - exiting loop'.format(current.location)
 
-                def reversepath(currentnode, startnode, goalnode):
-                    if currentnode is startnode:
-                        print 'Reached fighter'
-                        createvisualnode(currentnode.location['x'], currentnode.location['y'], background,
-                                         '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_up.png')
-                    elif currentnode is goalnode:
-                        createvisualnode(current.location['x'], current.location['y'], background,
-                             '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice.png')
-                        reversepath(currentnode.parent, startnode, goalnode)
+            if current.goal:
+                print 'Found goal at {0} - exiting loop with final cost: {1}'.format(current.location, current.costsofar)
+
+                def reversepath(current, startnode, goalnode):
+                    if current is startnode:
+                        return
                     else:
-                        createvisualnode(currentnode.location['x'], currentnode.location['y'], background,
-                                         '/home/ben/Documents/uni_git/artificial_intelligence/sprites/cyan_fighter_up.png')
-                        reversepath(currentnode.parent, startnode, goalnode)
+                        chosenpath.put(current.direction)
+                        reversepath(current.parent, startnode, goalnode)
 
                 reversepath(current, startnode, current)
                 break
 
             for neighbour in self.getneighbours(current, nodelist):
-                newcost = current.cost + neighbour.cost
-                print 'cost: {0} neighbour cost: {1} newcost: {2}'.format(current.cost, neighbour.cost, newcost)
-                if neighbour.parent is None or newcost < neighbour.cost:
-                    print 'new path node chosen'
-                    neighbour.cost = newcost
-                    neighbour.priority = self.distancefromgoal(neighbour, goal) + newcost
-                    print 'cost: {0} priority: {1}'.format(neighbour.cost, neighbour.priority)
-                    openlist.put(neighbour)
-                    neighbour.parent = current
+                newcost = current.costsofar + neighbour['node'].cost
+                if neighbour['node'].parent is None or newcost < neighbour['node'].costsofar:
+                    neighbour['node'].costsofar = newcost
+                    neighbour['node'].priority = self.distancefromgoal(neighbour['node'], goal) + newcost
+                    neighbour['node'].direction = neighbour['dir']
+                    neighbour['node'].parent = current
+                    openlist.put(neighbour['node'])
+        return chosenpath
 
     def distancefromgoal(self, node, goal):
         return abs(node.location['x'] - goal.location['x']) + abs(node.location['y'] - goal.location['y'])
@@ -80,14 +72,14 @@ class Astar(object):
     # Get neighbours from a node (add boundary checks here?)
     def getneighbours(self, node, nodelist):
         neighbours = []
-        locations = [{'x': node.location['x'] + 1, 'y': node.location['y']},
-                     {'x': node.location['x'], 'y': node.location['y'] + 1},
-                     {'x': node.location['x'] - 1, 'y': node.location['y']},
-                     {'x': node.location['x'], 'y': node.location['y'] - 1}]
-        for location in locations:
+        locations = {'right': {'x': node.location['x'] + 1, 'y': node.location['y']},
+                     'down': {'x': node.location['x'], 'y': node.location['y'] + 1},
+                     'left': {'x': node.location['x'] - 1, 'y': node.location['y']},
+                     'up': {'x': node.location['x'], 'y': node.location['y'] - 1}}
+        for direction, location in locations.iteritems():
             for node in nodelist:
                 if node.location == location:
-                    neighbours.append(node)
+                    neighbours.append({'dir': direction, 'node': node})
         return neighbours
 
 
@@ -100,11 +92,15 @@ def createfighter(name, imagelist, fightertype = Player):
     blocklist.add(fighter)
     return fighter
 
+
 def createobstacle():
-    obstacleimagelist = {}
-    obstacleimagelist['strong'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate_metal.png'
-    obstacleimagelist['weak'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate_wood.png'
-    obstacle = Obstacle(obstacleimagelist)
+    obstacleimagelistchoice = \
+        {'crate': {'strong': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate_metal.png',
+                   'weak': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate_wood.png'},
+         'rock': {'strong': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/rock_strong.png',
+                  'weak': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/rock_weak.png'}}
+    obstacletype = random.choice(['crate', 'rock'])
+    obstacle = Obstacle(obstacleimagelistchoice[obstacletype], obstacletype)
     if not pygame.sprite.spritecollide(obstacle, blocklist, False, pygame.sprite.collide_circle):
         obstaclelist.add(obstacle)
         blocklist.add(obstacle)
@@ -122,7 +118,7 @@ def creategoal():
     else:
         print 'Goal creation blocked!'
         goal.kill()
-        goal = createenemy(goalimagelist)
+        goal = creategoal()
     return goal
 
 
@@ -147,20 +143,6 @@ def attackobstacle(location, direction):
         if foundobstacle.hp <= 0:
             foundobstacle.kill()
 
-# Test visualisations
-def createvisualnode(x, y, background, imagefile):
-    screen = pygame.display.get_surface()
-    for visualnode in visualnodelist:
-        screen.blit(background, visualnode.rect, visualnode.rect)
-    visualimagelist = {}
-    visualimagelist['image'] = imagefile
-    visualnode = Block(visualimagelist)
-    visualnode.rect = visualnode.rect.move(x*32, y*32)
-    pygame.sprite.spritecollide(visualnode, visualnodelist, True, pygame.sprite.collide_circle)
-    visualnodelist.add(visualnode)
-    visualnodelist.draw(screen)
-    pygame.display.flip()
-
 
 def main():
     # Initialise screen
@@ -182,9 +164,13 @@ def main():
     global fighterlist
     fighterlist = pygame.sprite.Group()
 
-    # List of all active projectiles
-    global projectilelist
-    projectilelist = pygame.sprite.Group()
+    # List of all active players
+    global playerlist
+    playerlist = pygame.sprite.Group()
+
+    # List of all active enemies
+    global enemylist
+    enemylist = pygame.sprite.Group()
 
     # List of all active obstacles
     global obstaclelist
@@ -204,6 +190,7 @@ def main():
     playerimagelist['left'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_left.png'
     playerimagelist['right'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_right.png'
     player1 = createfighter('Player one', playerimagelist, Player)
+    playerlist.add(player1)
 
     # Initialise enemies
     # TODO: Use OCEAN model for enemies
@@ -213,6 +200,7 @@ def main():
     enemyimagelist['left'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_left.png'
     enemyimagelist['right'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_right.png'
     enemyaggressive = createfighter('Aggressive enemy', enemyimagelist, Enemy)
+    enemylist.add(enemyaggressive)
 
     # Blit to the screen
     screen.blit(background, (0, 0))
@@ -229,9 +217,9 @@ def main():
             for obstacle in obstaclelist:
                 if obstacle.location['x'] == x and obstacle.location['y'] == y:
                     if obstacle.strength == 'weak':
-                        node.cost = 5
+                        node.cost = obstacle.weakmax
                     elif obstacle.strength == 'strong':
-                        node.cost = 10
+                        node.cost = obstacle.strongmax
             if goal.location['x'] == x and goal.location['y'] == y:
                 goalnode = node
                 node.goal = True
@@ -239,21 +227,14 @@ def main():
                 startnode = node
             nodelist.append(node)
 
-    # Test visualisations
-    global visualnodelist
-    visualnodelist = pygame.sprite.Group()
-
     astar = Astar()
-    astar.traverse(startnode, goalnode, nodelist, background)
-
+    enemyaggressive.path = astar.traverse(startnode, goalnode, nodelist)
 
     # Event loop
     while True:
-        clock.tick(5)
+        clock.tick(60)
         for fighter in fighterlist:
             screen.blit(background, fighter.rect, fighter.rect)
-        for projectile in projectilelist:
-            screen.blit(background, projectile.rect, projectile.rect)
         for obstacle in obstaclelist:
             screen.blit(background, obstacle.rect, obstacle.rect)
 
@@ -276,7 +257,6 @@ def main():
                 else:
                     if event.key == K_SPACE:
                         attackobstacle(player1.location, player1.direction)
-                print player1.location
             elif event.type == KEYUP:
                 if event.key == K_w and player1.direction == 'up':
                     player1.moving = False
@@ -287,20 +267,22 @@ def main():
                 elif event.key == K_d and player1.direction == 'right':
                     player1.moving = False
 
-        enemyaggressive.randommove()
+        playerlist.update(1, obstaclelist)
 
-        fighterlist.update(1, obstaclelist)
-        projectilelist.update(32)
+        if not enemyaggressive.attemptmove(1, obstaclelist):
+            attackobstacle(enemyaggressive.location, enemyaggressive.direction)
+
         obstaclelist.update()
 
         blocklist.draw(screen)
 
+        pygame.display.flip()
+
         winner = pygame.sprite.spritecollide(goal, fighterlist, False, pygame.sprite.collide_circle)
         if winner:
             print "{0} has reached the chalice and won!".format(winner[0].name)
-            sys.exit(0)
-
-        pygame.display.flip()
+            break
+            #sys.exit(0)
 
 if __name__ == '__main__':
     main()

@@ -12,18 +12,24 @@ class Obstacle(Block):
     Function:
     Attributes:"""
 
-    def __init__(self, imagelist, *groups):
+    def __init__(self, imagelist, name, *groups):
         super(Obstacle, self).__init__(imagelist, *groups)
         x = random.randint(0, 23)
         y = random.randint(0, 23)
         self.location = {'x': x, 'y': y}
         self.rect = self.rect.move(x*32, y*32)
         self.strength = None
-        self.hp = random.randint(1, 10)
+        self.name = name
+        if self.name == 'crate':
+            self.strongmax = 10
+        else:
+            self.strongmax = 1000
+        self.hp = random.randint(1, self.strongmax)
+        self.weakmax = self.strongmax/2
         self.update()
 
     def update(self):
-        if self.hp > 5:
+        if self.hp > self.weakmax:
             self.strength = 'strong'
             self.image = self.imagelist['strong']
         else:
