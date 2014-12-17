@@ -12,75 +12,10 @@ try:
     from player import Player
     from obstacle import Obstacle
     from goal import Goal
+    from astar import Astar
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
-
-
-class Node(object):
-
-    def __init__(self, x, y):
-        self.location = {'x': x, 'y': y}
-        self.goal = False
-        self.parent = None
-        self.priority = 999999
-        self.cost = 1
-        self.costsofar = 0
-        self.direction = 'none'
-
-    def __cmp__(self, other):
-        return cmp(self.priority, other.priority)
-
-class Astar(object):
-
-    def traverse(self, startnode, goal, nodelist):
-        openlist = PriorityQueue()
-        chosenpath = LifoQueue()
-        startnode.priority = 0
-        startnode.cost = 0
-        openlist.put(startnode)
-
-        while not openlist.empty():
-            current = openlist.get()
-
-            if current.goal:
-                print 'Found goal at {0} - exiting loop with final cost: {1}'.format(current.location, current.costsofar)
-
-                def reversepath(current, startnode, goalnode):
-                    if current is startnode:
-                        return
-                    else:
-                        chosenpath.put(current.direction)
-                        reversepath(current.parent, startnode, goalnode)
-
-                reversepath(current, startnode, current)
-                break
-
-            for neighbour in self.getneighbours(current, nodelist):
-                newcost = current.costsofar + neighbour['node'].cost
-                if neighbour['node'].parent is None or newcost < neighbour['node'].costsofar:
-                    neighbour['node'].costsofar = newcost
-                    neighbour['node'].priority = self.distancefromgoal(neighbour['node'], goal) + newcost
-                    neighbour['node'].direction = neighbour['dir']
-                    neighbour['node'].parent = current
-                    openlist.put(neighbour['node'])
-        return chosenpath
-
-    def distancefromgoal(self, node, goal):
-        return abs(node.location['x'] - goal.location['x']) + abs(node.location['y'] - goal.location['y'])
-
-    # Get neighbours from a node (add boundary checks here?)
-    def getneighbours(self, node, nodelist):
-        neighbours = []
-        locations = {'right': {'x': node.location['x'] + 1, 'y': node.location['y']},
-                     'down': {'x': node.location['x'], 'y': node.location['y'] + 1},
-                     'left': {'x': node.location['x'] - 1, 'y': node.location['y']},
-                     'up': {'x': node.location['x'], 'y': node.location['y'] - 1}}
-        for direction, location in locations.iteritems():
-            for node in nodelist:
-                if node.location == location:
-                    neighbours.append({'dir': direction, 'node': node})
-        return neighbours
 
 
 def createfighter(name, imagelist, fightertype = Player):
@@ -183,24 +118,28 @@ def main():
     for i in range(0, 500):
         createobstacle()
 
+    imagedirectionlist = ['up', 'down', 'left', 'right']
+
     # Initialise players
     playerimagelist = {}
-    playerimagelist['up'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_up.png'
-    playerimagelist['down'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_down.png'
-    playerimagelist['left'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_left.png'
-    playerimagelist['right'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_right.png'
+    for direction in imagedirectionlist:
+        playerimagelist[direction] = \
+            '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_{0}.png'.format(direction)
     player1 = createfighter('Player one', playerimagelist, Player)
     playerlist.add(player1)
 
     # Initialise enemies
-    # TODO: Use OCEAN model for enemies
-    enemyimagelist = {}
-    enemyimagelist['up'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_up.png'
-    enemyimagelist['down'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_down.png'
-    enemyimagelist['left'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_left.png'
-    enemyimagelist['right'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_right.png'
-    enemyaggressive = createfighter('Aggressive enemy', enemyimagelist, Enemy)
-    enemylist.add(enemyaggressive)
+    # TODO: Use OCEAN model for enemies?
+    enemycolourlist = ['red', 'yellow', 'pink', 'cyan']
+
+    for enemycolour in enemycolourlist:
+        enemyimagelist = {}
+        for direction in imagedirectionlist:
+            enemyimagelist[direction] = \
+                '/home/ben/Documents/uni_git/artificial_intelligence/sprites/{0}_fighter_{1}.png'\
+                .format(enemycolour, direction)
+        enemy = createfighter('{0} enemy'.format(enemycolour), enemyimagelist, Enemy)
+        enemylist.add(enemy)
 
     # Blit to the screen
     screen.blit(background, (0, 0))
@@ -210,29 +149,12 @@ def main():
     clock = pygame.time.Clock()
 
     # Initialise Astar
-    nodelist = []
-    for x in range(24):
-        for y in range(24):
-            node = Node(x, y)
-            for obstacle in obstaclelist:
-                if obstacle.location['x'] == x and obstacle.location['y'] == y:
-                    if obstacle.strength == 'weak':
-                        node.cost = obstacle.weakmax
-                    elif obstacle.strength == 'strong':
-                        node.cost = obstacle.strongmax
-            if goal.location['x'] == x and goal.location['y'] == y:
-                goalnode = node
-                node.goal = True
-            elif enemyaggressive.location['x'] == x and enemyaggressive.location['y'] == y:
-                startnode = node
-            nodelist.append(node)
-
-    astar = Astar()
-    enemyaggressive.path = astar.traverse(startnode, goalnode, nodelist)
+    for enemy in enemylist:
+        enemy.path = Astar(obstaclelist, enemy, goal).traverse()
 
     # Event loop
     while True:
-        clock.tick(60)
+        clock.tick(5)
         for fighter in fighterlist:
             screen.blit(background, fighter.rect, fighter.rect)
         for obstacle in obstaclelist:
@@ -269,8 +191,9 @@ def main():
 
         playerlist.update(1, obstaclelist)
 
-        if not enemyaggressive.attemptmove(1, obstaclelist):
-            attackobstacle(enemyaggressive.location, enemyaggressive.direction)
+        for enemy in enemylist:
+            if not enemy.attemptmove(1, obstaclelist):
+                attackobstacle(enemy.location, enemy.direction)
 
         obstaclelist.update()
 
@@ -278,10 +201,13 @@ def main():
 
         pygame.display.flip()
 
+        # TODO: Handle collisions with other fighters to avoid two winners
         winner = pygame.sprite.spritecollide(goal, fighterlist, False, pygame.sprite.collide_circle)
         if winner:
-            print "{0} has reached the chalice and won!".format(winner[0].name)
+            print "{0} has reached the chalice!".format(winner[0].name)
+            print 'Game over!'
             break
+
             #sys.exit(0)
 
 if __name__ == '__main__':

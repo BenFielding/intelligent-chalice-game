@@ -23,7 +23,7 @@ class Obstacle(Block):
         if self.name == 'crate':
             self.strongmax = 10
         else:
-            self.strongmax = 1000
+            self.strongmax = 50
         self.hp = random.randint(1, self.strongmax)
         self.weakmax = self.strongmax/2
         self.update()
