@@ -12,10 +12,6 @@ class Goal(Block):
     Function:
     Attributes:"""
 
-    def __init__(self, imagefile, *groups):
-        super(Goal, self).__init__(imagefile, *groups)
-        x = random.randint(0, 23)
-        y = random.randint(0, 23)
-        self.location = {'x': x, 'y': y}
-        self.rect = self.rect.move(x*32, y*32)
+    def __init__(self, imagefile, screenwidth, screenheight, *groups):
+        super(Goal, self).__init__(imagefile, screenwidth, screenheight, *groups)
         self.update()

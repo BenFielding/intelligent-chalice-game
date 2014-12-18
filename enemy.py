@@ -13,21 +13,13 @@ class Enemy(Fighter):
     Functions: update, calcNewPos
     Attributes: """
 
-    def __init__(self, name, imagelist, *groups):
-        super(Enemy, self).__init__(name, imagelist, *groups)
-        x = random.randint(0, 23)
-        y = random.randint(0, 23)
-        self.location = {'x': x, 'y': y}
-        self.rect = self.rect.move(x*32, y*32)
+    def __init__(self, name, imagelist, screenwidth, screenheight, *groups):
+        super(Enemy, self).__init__(name, imagelist, screenwidth, screenheight, *groups)
         self.path = None
         self.direction = None
-        self.attacking = False
         self.moving = True
 
-    def attemptmove(self, magnitude, obstaclelist):
-        if self.attacking:
-            self.attacking = not self.update(magnitude, obstaclelist)
-        else:
+    def update(self, magnitude, obstaclelist):
+        if not self.attacking:
             self.direction = self.path.get()
-            self.attacking = not self.update(magnitude, obstaclelist)
-        return not self.attacking
+        self.attacking = not super(Enemy, self).update(magnitude, obstaclelist)

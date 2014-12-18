@@ -12,12 +12,8 @@ class Obstacle(Block):
     Function:
     Attributes:"""
 
-    def __init__(self, imagelist, name, *groups):
-        super(Obstacle, self).__init__(imagelist, *groups)
-        x = random.randint(0, 23)
-        y = random.randint(0, 23)
-        self.location = {'x': x, 'y': y}
-        self.rect = self.rect.move(x*32, y*32)
+    def __init__(self, imagelist, name, screenwidth, screenheight, *groups):
+        super(Obstacle, self).__init__(imagelist, screenwidth, screenheight, *groups)
         self.strength = None
         self.name = name
         if self.name == 'crate':

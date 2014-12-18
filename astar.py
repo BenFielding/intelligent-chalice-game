@@ -20,10 +20,10 @@ class Node(object):
 
 class Astar(object):
 
-    def __init__(self, obstaclelist, startblock, endblock):
+    def __init__(self, obstaclelist, startblock, endblock, gridwidth, gridheight):
         self.nodelist = []
-        for x in range(24):
-            for y in range(24):
+        for x in range(gridwidth):
+            for y in range(gridheight):
                 node = Node(x, y)
                 for obstacle in obstaclelist:
                     if obstacle.location['x'] == x and obstacle.location['y'] == y:

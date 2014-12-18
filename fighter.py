@@ -12,17 +12,18 @@ class Fighter(Block):
     Functions: update, calcNewPos
     Attributes:"""
 
-    def __init__(self, name, imagefile, *groups):
-        super(Fighter, self).__init__(imagefile, *groups)
+    def __init__(self, name, imagelist, screenwidth, screenheight, *groups):
+        super(Fighter, self).__init__(imagelist, screenwidth, screenheight, *groups)
         self.name = name
         self.direction = 'down'
         self.image = self.imagelist[self.direction]
         self.moving = False
+        self.attacking = False
 
     def update(self, magnitude, obstaclelist):
         if self.moving:
             oldpos = self.rect
-            newpos = self.calcnewpos(self.rect, self.direction, magnitude)
+            newpos = self.calcnewpos(magnitude)
             self.rect = newpos
             if pygame.sprite.spritecollide(self, obstaclelist, False, pygame.sprite.collide_circle):
                 self.rect = oldpos
@@ -33,17 +34,17 @@ class Fighter(Block):
             self.location = {'x': self.rect.x/32, 'y': self.rect.y/32}
             return success
 
-    def calcnewpos(self, rect, direction, magnitude):
-        self.image = self.imagelist[direction]
-        if direction == 'up':
+    def calcnewpos(self, magnitude):
+        self.image = self.imagelist[self.direction]
+        if self.direction == 'up':
             # move up
-            return rect.move(0, -(magnitude*32))
-        elif direction == 'down':
+            return self.rect.move(0, -(magnitude*32))
+        elif self.direction == 'down':
             # move down
-            return rect.move(0, +(magnitude*32))
-        elif direction == 'left':
+            return self.rect.move(0, +(magnitude*32))
+        elif self.direction == 'left':
             # move left
-            return rect.move(-(magnitude*32), 0)
-        elif direction == 'right':
+            return self.rect.move(-(magnitude*32), 0)
+        elif self.direction == 'right':
             # move right
-            return rect.move(+(magnitude*32), 0)
+            return self.rect.move(+(magnitude*32), 0)

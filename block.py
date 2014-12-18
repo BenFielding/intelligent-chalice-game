@@ -1,6 +1,7 @@
 try:
     import pygame
     import sys
+    import random
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
@@ -12,7 +13,7 @@ class Block(pygame.sprite.Sprite):
     Functions:
     Attributes:"""
 
-    def __init__(self, imagelist, *groups):
+    def __init__(self, imagelist, screenwidth, screenheight, *groups):
         pygame.sprite.Sprite.__init__(self, *groups)
         self.imagelist = {}
         for key, imagefile in imagelist.iteritems():
@@ -25,5 +26,8 @@ class Block(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.screen = pygame.display.get_surface()
         self.area = self.screen.get_rect()
-        self.location = {'x': 0, 'y': 0}
+        x = random.randint(0, (screenwidth/self.rect.width) - 1)
+        y = random.randint(0, (screenheight/self.rect.height) - 1)
+        self.location = {'x': x, 'y': y}
+        self.rect = self.rect.move(x*32, y*32)
         self.radius = 8
