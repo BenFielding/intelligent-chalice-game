@@ -46,6 +46,9 @@ class Game(object):
         # List of all active obstacles
         self.obstaclelist = pygame.sprite.Group()
 
+        # List of all active fighters and obstacles
+        self.fighterobstaclelist = pygame.sprite.Group()
+
         # Initialise goal
         self.goal = self.creategoal()
 
@@ -77,11 +80,16 @@ class Game(object):
             enemycolourlist = ['yellow', 'pink', 'cyan', 'green', 'orange']
             for enemynumber in range(0, numenemies):
                 enemyimagelist = {}
+                colour = random.choice(enemycolourlist)
                 for direction in imagedirectionlist:
+                    # enemyimagelist[direction] = \
+                    #     '/home/ben/Documents/uni_git/artificial_intelligence/sprites/{0}_fighter_{1}.png' \
+                    #     .format(enemycolourlist[enemynumber], direction)
                     enemyimagelist[direction] = \
                         '/home/ben/Documents/uni_git/artificial_intelligence/sprites/{0}_fighter_{1}.png' \
-                        .format(enemycolourlist[enemynumber], direction)
-                enemy = self.createfighter('{0} enemy'.format(enemycolourlist[enemynumber]), enemyimagelist, Enemy)
+                        .format(colour, direction)
+                #enemy = self.createfighter('{0} enemy'.format(enemycolourlist[enemynumber]), enemyimagelist, Enemy)
+                enemy = self.createfighter('{0} enemy'.format(colour), enemyimagelist, Enemy)
                 self.enemylist.add(enemy)
 
         # Initialise clock
@@ -99,6 +107,7 @@ class Game(object):
             fighter.kill()
             fighter = self.createfighter(name, imagelist, fightertype)
         self.fighterlist.add(fighter)
+        self.fighterobstaclelist.add(fighter)
         self.blocklist.add(fighter)
         return fighter
 
@@ -112,6 +121,7 @@ class Game(object):
         obstacle = Obstacle(obstacleimagelistchoice[obstacletype], obstacletype, self.screen.get_width(), self.screen.get_height())
         if not pygame.sprite.spritecollide(obstacle, self.blocklist, False, pygame.sprite.collide_circle):
             self.obstaclelist.add(obstacle)
+            self.fighterobstaclelist.add(obstacle)
             self.blocklist.add(obstacle)
         else:
             obstacle.kill()
@@ -171,7 +181,7 @@ class Game(object):
         while True:
 
             # Set the fps to run at
-            self.clock.tick(10)
+            self.clock.tick(60)
 
             # Blit all blocks to the screen
             for block in self.blocklist:
@@ -179,14 +189,14 @@ class Game(object):
 
             # handle all keyevents in the queue, returns false for QUIT
             if self.handlekeyevents() == 'quit':
-                break
+                return 'no-one', False
 
             # # Calculate new paths
             # for enemy in self.enemylist:
             #     enemy.path = Astar(self.obstaclelist, enemy, self.goal).traverse()
 
             # Update all fighters
-            self.fighterlist.update(1, self.obstaclelist)
+            self.fighterlist.update(1, self.fighterobstaclelist)
 
             # Check if fighters are attacking obstacles, attack if so
             for fighter in self.fighterlist:

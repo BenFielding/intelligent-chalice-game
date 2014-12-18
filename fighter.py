@@ -25,7 +25,7 @@ class Fighter(Block):
             oldpos = self.rect
             newpos = self.calcnewpos(magnitude)
             self.rect = newpos
-            if pygame.sprite.spritecollide(self, obstaclelist, False, pygame.sprite.collide_circle):
+            if len(pygame.sprite.spritecollide(self, obstaclelist, False, pygame.sprite.collide_circle)) > 1:
                 self.rect = oldpos
                 success = False
             else:

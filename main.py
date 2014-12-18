@@ -20,9 +20,10 @@ def main():
     print 'Player one will be blue'
     if numplayers == 2:
         'Player two will be red'
-    while numenemies not in range(0, 6):
+    #while numenemies not in range(0, 6):
+    while numenemies not in range(0, 9999999):
         try:
-            numenemies = int(raw_input('Please enter the number of enemies(0-5):'))
+            numenemies = int(raw_input('Please enter the number of enemies:'))
         except ValueError:
             print 'Invalid entry'
     print
