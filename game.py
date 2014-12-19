@@ -9,9 +9,9 @@ try:
     from fighter import Fighter
     from enemy import Enemy
     from player import Player
-    from obstacle import Obstacle
+    from obstacle import *
     from goal import Goal
-    from astar import Astar
+    from astar import *
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
@@ -49,12 +49,19 @@ class Game(object):
         # List of all active fighters and obstacles
         self.fighterobstaclelist = pygame.sprite.Group()
 
+        self.astar = Astar(self.screen.get_width()/32, self.screen.get_height()/32)
+
         # Initialise goal
         self.goal = self.creategoal()
+        # astar.nodegraph[self.goal.location['x']][self.goal.location['y']] = True
 
         # Initialise obstacles
         for i in range(0, 500):
-            self.createobstacle()
+            obstacle = self.createrandomobstacle()
+            if obstacle.strength == 'strong':
+                self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.strongmax
+            else:
+                self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.weakmax
 
         # Initialise fighters
         imagedirectionlist = ['up', 'down', 'left', 'right']
@@ -95,12 +102,6 @@ class Game(object):
         # Initialise clock
         self.clock = pygame.time.Clock()
 
-        # Initialise Astar
-        for enemy in self.enemylist:
-            enemy.path = Astar(self.obstaclelist, enemy, self.goal,
-                               self.screen.get_width()/enemy.rect.width,
-                               self.screen.get_height()/enemy.rect.height).traverse()
-
     def createfighter(self, name, imagelist, fightertype = Player):
         fighter = fightertype(name, imagelist, self.screen.get_width(), self.screen.get_height())
         if pygame.sprite.spritecollide(fighter, self.blocklist, False, pygame.sprite.collide_circle):
@@ -111,21 +112,22 @@ class Game(object):
         self.blocklist.add(fighter)
         return fighter
 
-    def createobstacle(self):
+    def createrandomobstacle(self):
         obstacleimagelistchoice = \
             {'crate': {'strong': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate_metal.png',
                        'weak': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate_wood.png'},
              'rock': {'strong': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/rock_strong.png',
                       'weak': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/rock_weak.png'}}
-        obstacletype = random.choice(['crate', 'rock'])
-        obstacle = Obstacle(obstacleimagelistchoice[obstacletype], obstacletype, self.screen.get_width(), self.screen.get_height())
+        obstaclename, obstacletype = random.choice([['crate', Crate], ['rock', Rock]])
+        obstacle = obstacletype(obstacleimagelistchoice[obstaclename], obstaclename, self.screen.get_width(), self.screen.get_height())
         if not pygame.sprite.spritecollide(obstacle, self.blocklist, False, pygame.sprite.collide_circle):
             self.obstaclelist.add(obstacle)
             self.fighterobstaclelist.add(obstacle)
             self.blocklist.add(obstacle)
         else:
             obstacle.kill()
-            self.createobstacle()
+            self.createrandomobstacle()
+        return obstacle
 
     def creategoal(self):
         goalimagelist = {}
@@ -192,8 +194,8 @@ class Game(object):
                 return 'no-one', False
 
             # # Calculate new paths
-            # for enemy in self.enemylist:
-            #     enemy.path = Astar(self.obstaclelist, enemy, self.goal).traverse()
+            for enemy in self.enemylist:
+                enemy.path = self.astar.traverse(enemy.location, self.goal.location)
 
             # Update all fighters
             self.fighterlist.update(1, self.fighterobstaclelist)
@@ -204,7 +206,13 @@ class Game(object):
                     self.attackobstacle(fighter.location, fighter.direction)
 
             # Update all obstacles
-            self.obstaclelist.update()
+            # self.astar = self.obstaclelist.update(self.astar)
+            for obstacle in self.obstaclelist:
+                obstacle.update()
+                if obstacle.strength == 'strong':
+                    self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.strongmax
+                else:
+                    self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.weakmax
 
             # Draw all blocks
             self.blocklist.draw(self.screen)

@@ -16,10 +16,6 @@ class Obstacle(Block):
         super(Obstacle, self).__init__(imagelist, screenwidth, screenheight, *groups)
         self.strength = None
         self.name = name
-        if self.name == 'crate':
-            self.strongmax = 10
-        else:
-            self.strongmax = 50
         self.hp = random.randint(1, self.strongmax)
         self.weakmax = self.strongmax/2
         self.update()
@@ -31,3 +27,17 @@ class Obstacle(Block):
         else:
             self.strength = 'weak'
             self.image = self.imagelist['weak']
+
+
+class Crate(Obstacle):
+
+    def __init__(self, imagelist, name, screenwidth, screenheight, *groups):
+        self.strongmax = 10
+        super(Crate, self).__init__(imagelist, name, screenwidth, screenheight, *groups)
+
+
+class Rock(Obstacle):
+
+    def __init__(self, imagelist, name, screenwidth, screenheight, *groups):
+        self.strongmax = 50
+        super(Rock, self).__init__(imagelist, name, screenwidth, screenheight, *groups)

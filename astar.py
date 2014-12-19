@@ -1,4 +1,5 @@
 try:
+    import sys
     from Queue import *
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
@@ -7,79 +8,66 @@ except ImportError, error:
 class Node(object):
 
     def __init__(self, x, y):
-        self.location = {'x': x, 'y': y}
-        self.goal = False
-        self.parent = None
-        self.priority = 999999
+        # self.goal = False
         self.cost = 1
-        self.costsofar = 0
         self.direction = 'none'
+        self.neighbours = []
+        self.location = {'x': x, 'y': y}
 
-    def __cmp__(self, other):
-        return cmp(self.priority, other.priority)
 
 class Astar(object):
 
-    def __init__(self, obstaclelist, startblock, endblock, gridwidth, gridheight):
-        self.nodelist = []
-        for x in range(gridwidth):
-            for y in range(gridheight):
-                node = Node(x, y)
-                for obstacle in obstaclelist:
-                    if obstacle.location['x'] == x and obstacle.location['y'] == y:
-                        if obstacle.strength == 'weak':
-                            node.cost = obstacle.weakmax
-                        elif obstacle.strength == 'strong':
-                            node.cost = obstacle.strongmax
-                if endblock.location['x'] == x and endblock.location['y'] == y:
-                    self.goalnode = endblock
-                    node.goal = True
-                elif startblock.location['x'] == x and startblock.location['y'] == y:
-                    self.startnode = node
-                self.nodelist.append(node)
+    def __init__(self, gridwidth, gridheight):
+        self.nodegraph = [[Node(x, y) for x in range(gridwidth)] for y in range(gridheight)]
+        for x in range(len(self.nodegraph)):
+            for y in range(len(self.nodegraph[x])):
+                node = self.nodegraph[x][y]
+                locations = {}
+                if x < gridwidth - 1:
+                    locations['right'] = {'x': x + 1, 'y': y}
+                if x > 0:
+                    locations['left'] = {'x': x - 1, 'y': y}
+                if y < gridheight - 1:
+                    locations['down'] = {'x': x, 'y': y + 1}
+                if y > 0:
+                    locations['up'] = {'x': x, 'y': y - 1}
+                for direction, neighbourlocation in locations.iteritems():
+                    if self.nodegraph[neighbourlocation['x']][neighbourlocation['y']]:
+                        node.neighbours.append({'dir': direction,
+                                                'node': self.nodegraph[neighbourlocation['x']][neighbourlocation['y']]})
 
-    def traverse(self):
+    def traverse(self, startlocation, endlocation):
         openlist = PriorityQueue()
         chosenpath = LifoQueue()
-        self.startnode.priority = 0
-        self.startnode.cost = 0
-        openlist.put(self.startnode)
+        costsofar = {}
+        parent = {}
+        startnode = self.nodegraph[startlocation['x']][startlocation['y']]
+        endnode = self.nodegraph[endlocation['x']][endlocation['y']]
+        costsofar[startnode] = 0
+        openlist.put((0, startnode))
 
         while not openlist.empty():
-            current = openlist.get()
-            if current.goal:
+            current = openlist.get()[1]
+            if current is endnode:
 
-                def reversepath(current, startnode, goalnode):
+                def reversepath(current, startnode):
                     if current is startnode:
                         return
                     else:
                         chosenpath.put(current.direction)
-                        reversepath(current.parent, startnode, goalnode)
+                        reversepath(parent[current], startnode)
 
-                reversepath(current, self.startnode, current)
+                reversepath(current, startnode)
                 break
-            for neighbour in self.getneighbours(current):
-                newcost = current.costsofar + neighbour['node'].cost
-                if neighbour['node'].parent is None or newcost < neighbour['node'].costsofar:
-                    neighbour['node'].costsofar = newcost
-                    neighbour['node'].priority = self.distancefromgoal(neighbour['node'], self.goalnode) + newcost
+            for neighbour in current.neighbours:
+                newcost = costsofar[current] + neighbour['node'].cost
+                if neighbour['node'] not in parent or newcost < costsofar[neighbour['node']]:
+                    costsofar[neighbour['node']] = newcost
+                    priority = self.distancefromgoal(neighbour['node'], endnode) + newcost
                     neighbour['node'].direction = neighbour['dir']
-                    neighbour['node'].parent = current
-                    openlist.put(neighbour['node'])
+                    parent[neighbour['node']] = current
+                    openlist.put((priority, neighbour['node']))
         return chosenpath
 
     def distancefromgoal(self, node, goal):
         return abs(node.location['x'] - goal.location['x']) + abs(node.location['y'] - goal.location['y'])
-
-    # Get neighbours from a node (add boundary checks here?)
-    def getneighbours(self, node):
-        neighbours = []
-        locations = {'right': {'x': node.location['x'] + 1, 'y': node.location['y']},
-                     'down': {'x': node.location['x'], 'y': node.location['y'] + 1},
-                     'left': {'x': node.location['x'] - 1, 'y': node.location['y']},
-                     'up': {'x': node.location['x'], 'y': node.location['y'] - 1}}
-        for direction, location in locations.iteritems():
-            for node in self.nodelist:
-                if node.location == location:
-                    neighbours.append({'dir': direction, 'node': node})
-        return neighbours
