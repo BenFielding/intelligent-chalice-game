@@ -7,6 +7,7 @@ except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
 
+
 def main():
 
     numplayers = None

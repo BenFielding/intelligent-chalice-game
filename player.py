@@ -18,18 +18,24 @@ class Player(Fighter):
         self.directiondict = {'up': False, 'down': False, 'left': False, 'right': False}
 
     def handlekeyevent(self, keyevent):
+        """
+        Handle input and set direction or attacking based on rules
+
+        :param keyevent: (dict) Keyed on 'action' (e.g. 'keydown') and 'key' (e.g. 'up', 'fire')
+        :return:
+        """
         if keyevent['action'] == 'keydown':
             if keyevent['key'] in self.directiondict:
                 self.directiondict[keyevent['key']] = True
                 self.directionqueue.put(keyevent['key'])
                 self.direction = keyevent['key']
                 self.moving = True
-            elif keyevent['key'] == 'space':
+            elif keyevent['key'] == 'fire':
                 self.attacking = True
         elif keyevent['action'] == 'keyup':
             if keyevent['key'] in self.directiondict:
                 self.directiondict[keyevent['key']] = False
-            elif keyevent['key'] == 'space':
+            elif keyevent['key'] == 'fire':
                 self.attacking = False
             if keyevent['key'] in self.directiondict and self.moving:
                 if not self.directiondict[self.direction]:

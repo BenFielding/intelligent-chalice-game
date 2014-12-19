@@ -5,10 +5,10 @@ except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
 
+
 class Node(object):
 
     def __init__(self, x, y):
-        # self.goal = False
         self.cost = 1
         self.direction = 'none'
         self.neighbours = []
@@ -37,6 +37,13 @@ class Astar(object):
                                                 'node': self.nodegraph[neighbourlocation['x']][neighbourlocation['y']]})
 
     def traverse(self, startlocation, endlocation):
+        """
+        Return LIFO queue of individual directions to reach end location from start location
+
+        :param startlocation: (dict) Dictionary of start location (keyed with 'x' and 'y')
+        :param endlocation:  (dict) Dictionary of end location (keyed with 'x' and 'y')
+        :return: (LifoQueue) LIFO queue of directions to reach end location from start location
+        """
         openlist = PriorityQueue()
         chosenpath = LifoQueue()
         costsofar = {}
@@ -70,4 +77,11 @@ class Astar(object):
         return chosenpath
 
     def distancefromgoal(self, node, goal):
+        """
+        Return the Manhattan distance between two nodes
+
+        :param node: (Node) Start node
+        :param goal: (Node) End node
+        :return: (int) Manhattan distance between Start node and End node
+        """
         return abs(node.location['x'] - goal.location['x']) + abs(node.location['y'] - goal.location['y'])

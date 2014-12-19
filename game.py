@@ -33,22 +33,18 @@ class Game(object):
         # Initialise sprite groups
         # List of all active blocks
         self.blocklist = pygame.sprite.Group()
-
         # List of all active fighters
         self.fighterlist = pygame.sprite.Group()
-
         # List of all active players
         self.playerlist = pygame.sprite.Group()
-
         # List of all active enemies
         self.enemylist = pygame.sprite.Group()
-
         # List of all active obstacles
         self.obstaclelist = pygame.sprite.Group()
-
         # List of all active fighters and obstacles
         self.fighterobstaclelist = pygame.sprite.Group()
 
+        # Create astar instance
         self.astar = Astar(self.screen.get_width()/32, self.screen.get_height()/32)
 
         # Initialise goal
@@ -56,7 +52,7 @@ class Game(object):
         # astar.nodegraph[self.goal.location['x']][self.goal.location['y']] = True
 
         # Initialise obstacles
-        for i in range(0, 500):
+        for i in range(0, 900):
             obstacle = self.createrandomobstacle()
             if obstacle.strength == 'strong':
                 self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.strongmax
@@ -103,6 +99,14 @@ class Game(object):
         self.clock = pygame.time.Clock()
 
     def createfighter(self, name, imagelist, fightertype = Player):
+        """
+        Return a Fighter object
+
+        :param name: (str) The name of the fighter
+        :param imagelist: (dict) Dictionary of image locations (keyed by direction)
+        :param fightertype: (class) Type of fighter
+        :return: (Fighter) Fighter object
+        """
         fighter = fightertype(name, imagelist, self.screen.get_width(), self.screen.get_height())
         if pygame.sprite.spritecollide(fighter, self.blocklist, False, pygame.sprite.collide_circle):
             fighter.kill()
@@ -113,6 +117,11 @@ class Game(object):
         return fighter
 
     def createrandomobstacle(self):
+        """
+        Return a random child object of Obstacle object
+
+        :return: (Crate or Rock) Crate or Rock (derived from Obstacle) object
+        """
         obstacleimagelistchoice = \
             {'crate': {'strong': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate_metal.png',
                        'weak': '/home/ben/Documents/uni_git/artificial_intelligence/sprites/crate_wood.png'},
@@ -130,6 +139,11 @@ class Game(object):
         return obstacle
 
     def creategoal(self):
+        """
+        Return Goal object
+
+        :return: (Goal) Goal object
+        """
         goalimagelist = {}
         goalimagelist['goal'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice.png'
         goal = Goal(goalimagelist, self.screen.get_width(), self.screen.get_height())
@@ -142,6 +156,12 @@ class Game(object):
         return goal
 
     def attackobstacle(self, location, direction):
+        """
+        Attack obstacle in direction from attacker
+
+        :param location: (dict) Dictionary of attacker location (keyed with 'x' and 'y')
+        :param direction: (str) Direction of attack from attacker
+        """
         objlocation = {'x': location['x'], 'y': location['y']}
         if direction == 'up':
             objlocation['y'] = location['y'] - 1
@@ -163,8 +183,13 @@ class Game(object):
                 foundobstacle.kill()
 
     def handlekeyevents(self):
-        player1keymapping = {K_w: 'up', K_s: 'down', K_a: 'left', K_d: 'right', K_SPACE: 'space'}
-        player2keymapping = {K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', K_RCTRL: 'space'}
+        """
+        Loop through event queue and interpret events based on rules
+
+        :return: (str) Return 'quit', 'continue' or ''
+        """
+        player1keymapping = {K_w: 'up', K_s: 'down', K_a: 'left', K_d: 'right', K_SPACE: 'fire'}
+        player2keymapping = {K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', K_RCTRL: 'fire'}
         eventmapping = {KEYDOWN: 'keydown', KEYUP: 'keyup'}
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
@@ -178,12 +203,18 @@ class Game(object):
                 if self.numplayers == 2 and event.key in player2keymapping:
                     self.player2.handlekeyevent({'key': player2keymapping[event.key],
                                                  'action': eventmapping[event.type]})
+        return ''
 
     def play(self):
+        """
+        Main game loop, returns the name of the winner and whether or not to play again
+
+        :return: (str, bool) Name of winner, playagain
+        """
         while True:
 
             # Set the fps to run at
-            self.clock.tick(60)
+            self.clock.tick(10)
 
             # Blit all blocks to the screen
             for block in self.blocklist:
@@ -198,7 +229,11 @@ class Game(object):
                 enemy.path = self.astar.traverse(enemy.location, self.goal.location)
 
             # Update all fighters
-            self.fighterlist.update(1, self.fighterobstaclelist)
+            for fighter in self.fighterlist:
+                self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = 1
+                fighter.update(1, self.fighterobstaclelist)
+                self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = float('inf')
+
 
             # Check if fighters are attacking obstacles, attack if so
             for fighter in self.fighterlist:

@@ -21,6 +21,14 @@ class Fighter(Block):
         self.attacking = False
 
     def update(self, magnitude, obstaclelist):
+        """
+        Attempt movement in direction, of magnitude.
+        If blocked by obstacle in obstaclelist, return False else return True.
+
+        :param magnitude: (int) magnitude of movement
+        :param obstaclelist: (pygame.sprite.Group()) List of obstacle to block movement
+        :return: (bool) Success of movement
+        """
         if self.moving:
             oldpos = self.rect
             newpos = self.calcnewpos(magnitude)
@@ -35,6 +43,12 @@ class Fighter(Block):
             return success
 
     def calcnewpos(self, magnitude):
+        """
+        Calculate a new position based on direction and magnitude of movement
+
+        :param magnitude: (int) Magnitude of movement
+        :return: (pygame.Rect) New location after movement
+        """
         self.image = self.imagelist[self.direction]
         if self.direction == 'up':
             # move up

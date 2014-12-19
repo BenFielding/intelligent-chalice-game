@@ -10,7 +10,7 @@ except ImportError, error:
 class Enemy(Fighter):
     """An enemy character, inherits from Fighter
     Returns: An enemy object
-    Functions: update, calcNewPos
+    Functions: update
     Attributes: """
 
     def __init__(self, name, imagelist, screenwidth, screenheight, *groups):
@@ -20,6 +20,12 @@ class Enemy(Fighter):
         self.moving = True
 
     def update(self, magnitude, obstaclelist):
-        if not self.attacking:
-            self.direction = self.path.get()
+        """
+        Pop direction off LIFO queue path and attempt movement in direction.
+        Set attacking to True if movement fails
+
+        :param magnitude: (int) Magnitude of movement
+        :param obstaclelist: (pygame.sprite.Group()) List of obstacles which cannot be moved onto
+        """
+        self.direction = self.path.get()
         self.attacking = not super(Enemy, self).update(magnitude, obstaclelist)

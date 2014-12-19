@@ -21,6 +21,9 @@ class Obstacle(Block):
         self.update()
 
     def update(self):
+        """
+        Check hitpoints and set strength and image based on basic rule.
+        """
         if self.hp > self.weakmax:
             self.strength = 'strong'
             self.image = self.imagelist['strong']
@@ -32,12 +35,12 @@ class Obstacle(Block):
 class Crate(Obstacle):
 
     def __init__(self, imagelist, name, screenwidth, screenheight, *groups):
-        self.strongmax = 10
+        self.strongmax = 100
         super(Crate, self).__init__(imagelist, name, screenwidth, screenheight, *groups)
 
 
 class Rock(Obstacle):
 
     def __init__(self, imagelist, name, screenwidth, screenheight, *groups):
-        self.strongmax = 50
+        self.strongmax = 500
         super(Rock, self).__init__(imagelist, name, screenwidth, screenheight, *groups)
