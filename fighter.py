@@ -19,6 +19,7 @@ class Fighter(Block):
         self.image = self.imagelist[self.direction]
         self.moving = False
         self.attacking = False
+        self.points = 0
 
     def update(self, magnitude, obstaclelist):
         """

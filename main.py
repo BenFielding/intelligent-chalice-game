@@ -21,6 +21,7 @@ def main():
     print 'Player one will be blue'
     if numplayers == 2:
         'Player two will be red'
+
     #while numenemies not in range(0, 6):
     while numenemies not in range(0, 9999999):
         try:

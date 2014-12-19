@@ -43,12 +43,14 @@ class Game(object):
         self.obstaclelist = pygame.sprite.Group()
         # List of all active fighters and obstacles
         self.fighterobstaclelist = pygame.sprite.Group()
+        # List of all active chalices
+        self.chalicelist = pygame.sprite.Group()
 
         # Create astar instance
         self.astar = Astar(self.screen.get_width()/32, self.screen.get_height()/32)
 
-        # Initialise goal
-        self.goal = self.creategoal()
+        # Initialise goals
+        self.createchalices()
         # astar.nodegraph[self.goal.location['x']][self.goal.location['y']] = True
 
         # Initialise obstacles
@@ -68,31 +70,29 @@ class Game(object):
         for direction in imagedirectionlist:
             playerimagelist[direction] = \
                 '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_{0}.png'.format(direction)
-        self.player1 = self.createfighter('Player one', playerimagelist, Player)
+        self.player1 = self.createfighter('Player 1', playerimagelist, Player)
         self.playerlist.add(self.player1)
         if self.numplayers == 2:
             for direction in imagedirectionlist:
                 playerimagelist[direction] = \
                     '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_{0}.png'.format(direction)
-            self.player2 = self.createfighter('Player two', playerimagelist, Player)
+            self.player2 = self.createfighter('Player 2', playerimagelist, Player)
             self.playerlist.add(self.player2)
 
         # Initialise enemies
         # TODO: Use OCEAN model for enemies?
         if numenemies > 0:
             enemycolourlist = ['yellow', 'pink', 'cyan', 'green', 'orange']
+            enemycolourcount = {'yellow': 0, 'pink': 0, 'cyan': 0, 'green': 0, 'orange': 0}
             for enemynumber in range(0, numenemies):
                 enemyimagelist = {}
                 colour = random.choice(enemycolourlist)
+                enemycolourcount[colour] += 1
                 for direction in imagedirectionlist:
-                    # enemyimagelist[direction] = \
-                    #     '/home/ben/Documents/uni_git/artificial_intelligence/sprites/{0}_fighter_{1}.png' \
-                    #     .format(enemycolourlist[enemynumber], direction)
                     enemyimagelist[direction] = \
                         '/home/ben/Documents/uni_git/artificial_intelligence/sprites/{0}_fighter_{1}.png' \
                         .format(colour, direction)
-                #enemy = self.createfighter('{0} enemy'.format(enemycolourlist[enemynumber]), enemyimagelist, Enemy)
-                enemy = self.createfighter('{0} enemy'.format(colour), enemyimagelist, Enemy)
+                enemy = self.createfighter('{0} enemy {1}'.format(colour, enemycolourcount[colour]), enemyimagelist, Enemy)
                 self.enemylist.add(enemy)
 
         # Initialise clock
@@ -138,22 +138,50 @@ class Game(object):
             self.createrandomobstacle()
         return obstacle
 
-    def creategoal(self):
+    def createchalices(self):
         """
-        Return Goal object
+        Create chalices and add to chalicelist
 
-        :return: (Goal) Goal object
         """
-        goalimagelist = {}
-        goalimagelist['goal'] = '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice.png'
-        goal = Goal(goalimagelist, self.screen.get_width(), self.screen.get_height())
+        for i in range(1):
+            chaliceimagelist = {}
+            chaliceimagelist['image'] = \
+                '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice_gold_gems.png'
+            self.goal = self.creategoal(chaliceimagelist, 32, 'gold encrusted')
+            self.chalicelist.add(self.goal)
+            for i in range(2):
+                chaliceimagelist['image'] = \
+                    '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice_gold.png'
+                self.chalicelist.add(self.creategoal(chaliceimagelist, 16, 'gold'))
+                for i in range(2):
+                    chaliceimagelist['image'] = \
+                        '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice_silver_gems.png'
+                    self.chalicelist.add(self.creategoal(chaliceimagelist, 8, 'silver encrusted'))
+                    for i in range(2):
+                        chaliceimagelist['image'] = \
+                            '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice_silver.png'
+                        self.chalicelist.add(self.creategoal(chaliceimagelist, 4, 'silver'))
+                        for i in range(2):
+                            chaliceimagelist['image'] = \
+                                '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice_wood_gems.png'
+                            self.chalicelist.add(self.creategoal(chaliceimagelist, 2, 'wood encrusted'))
+                            for i in range(2):
+                                chaliceimagelist['image'] = \
+                                    '/home/ben/Documents/uni_git/artificial_intelligence/sprites/chalice_wood.png'
+                                self.chalicelist.add(self.creategoal(chaliceimagelist, 1, 'wood'))
+
+    def creategoal(self, goalimagelist, worth, name):
+        goal = Goal(goalimagelist, worth, name, self.screen.get_width(), self.screen.get_height())
         if not pygame.sprite.spritecollide(goal, self.blocklist, False, pygame.sprite.collide_circle):
             self.blocklist.add(goal)
         else:
-            print 'Goal creation blocked!'
             goal.kill()
-            goal = self.creategoal()
+            goal = self.creategoal(goalimagelist, worth, name)
         return goal
+
+
+    # def creategoal(self):
+
 
     def attackobstacle(self, location, direction):
         """
@@ -234,7 +262,6 @@ class Game(object):
                 fighter.update(1, self.fighterobstaclelist)
                 self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = float('inf')
 
-
             # Check if fighters are attacking obstacles, attack if so
             for fighter in self.fighterlist:
                 if fighter.attacking:
@@ -255,21 +282,26 @@ class Game(object):
             # Update the entire surface
             pygame.display.flip()
 
-            # TODO: Handle collisions with other fighters to avoid two winners
             # Check for fighter collision with the goal
-            winner = pygame.sprite.spritecollide(self.goal, self.fighterlist, False, pygame.sprite.collide_circle)
-            if winner:
-                font = pygame.font.SysFont("monospace", 32)
-                # render text
-                self.screen.blit(self.background, (0, 0))
-                winnertext = font.render('{0} has reached the chalice!'.format(winner[0].name), 1, (0, 204, 0))
-                playagaintext = font.render('hit RETURN to play again or ESC to quit', 1, (0, 204, 0))
-                self.screen.blit(winnertext, (self.screen.get_width()/8, self.screen.get_height()/3))
-                self.screen.blit(playagaintext, (self.screen.get_width()/8, (self.screen.get_height()/3)*2))
-                pygame.display.flip()
-                while True:
-                    playagain = self.handlekeyevents()
-                    if playagain is 'quit':
-                        return winner[0].name, False
-                    elif playagain is 'continue':
-                        return winner[0].name, True
+            for fighter, chalicecollisionlist in pygame.sprite.groupcollide(self.fighterlist, self.chalicelist,
+                                                        False, True, pygame.sprite.collide_circle).iteritems():
+                for chalice in chalicecollisionlist:
+                    fighter.points += chalice.worth
+                    print '{0} grabbed a {1} chalice for a total of {2} points!'.format(fighter.name,
+                                                                                        chalice.name, fighter.points)
+
+                if fighter.points >= 32:
+                    font = pygame.font.SysFont("monospace", 32)
+                    # render text
+                    self.screen.blit(self.background, (0, 0))
+                    winnertext = font.render('{0} has won with {1} points!'.format(fighter.name, fighter.points), 1, (0, 204, 0))
+                    playagaintext = font.render('hit RETURN to play again or ESC to quit', 1, (0, 204, 0))
+                    self.screen.blit(winnertext, (self.screen.get_width()/8, self.screen.get_height()/3))
+                    self.screen.blit(playagaintext, (self.screen.get_width()/8, (self.screen.get_height()/3)*2))
+                    pygame.display.flip()
+                    while True:
+                        playagain = self.handlekeyevents()
+                        if playagain is 'quit':
+                            return fighter.name, False
+                        elif playagain is 'continue':
+                            return fighter.name, True

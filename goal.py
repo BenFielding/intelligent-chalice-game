@@ -12,6 +12,8 @@ class Goal(Block):
     Function:
     Attributes:"""
 
-    def __init__(self, imagefile, screenwidth, screenheight, *groups):
+    def __init__(self, imagefile, worth, name, screenwidth, screenheight, *groups):
         super(Goal, self).__init__(imagefile, screenwidth, screenheight, *groups)
+        self.worth = worth
+        self.name = name
         self.update()
