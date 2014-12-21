@@ -133,9 +133,9 @@ class Game(object):
                 self.enemylist.add(enemy)
         for enemy in self.enemylist:
             for enemycomparison in self.enemylist:
-                if enemy.colour is enemycomparison.colour:
+                if enemycomparison is not enemy and enemy.colour is enemycomparison.colour:
                     enemy.friendlist.append(enemycomparison)
-                else:
+                elif enemycomparison is not enemy:
                     enemy.enemylist.append(enemycomparison)
             for player in self.playerlist:
                 enemy.enemylist.append(player)
@@ -289,24 +289,31 @@ class Game(object):
             # handle all keyevents in the queue, returns false for QUIT
             if self.handlekeyevents() == 'quit':
                 return 'no-one', False
-
+            print 'Paths'
             # Calculate new paths
             for enemy in self.enemylist:
                 enemy.calculatenewtarget(self.chalicelist)
                 if enemy.target:
                     enemy.path = self.astar.traverse(enemy.location, enemy.target.location)
-
+            print 'Update fighters'
             # Update all fighters
             for fighter in self.fighterlist:
+                print 'Nodegraph update'
                 self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = 1
+                print 'Fighter update: {0}'.format(fighter.name)
+                if 'enemy' in fighter.name:
+                    print 'Fighter target: {0}'.format(fighter.target)
+                    print 'Fighter location: {0}'.format(fighter.location)
+                    print 'Fighter target location: {0}'.format(fighter.target.location)
                 fighter.update(1, self.fighterobstaclelist)
+                print 'Nodegraph update'
                 self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = float('inf')
-
+            print 'Attacks'
             # Check if fighters are attacking obstacles, attack if so
             for fighter in self.fighterlist:
                 if fighter.attacking:
                     self.attackobstacle(fighter.location, fighter.direction)
-
+            print 'Update obstacles'
             # Update all obstacles
             # self.astar = self.obstaclelist.update(self.astar)
             for obstacle in self.obstaclelist:
@@ -330,12 +337,12 @@ class Game(object):
                     print '{0} grabbed a {1} chalice for a total of {2} points!'.format(fighter.name,
                                                                                         chalice.name, fighter.points)
 
-                if fighter.points >= 32:
+                if fighter.points >= 40:
                     font = pygame.font.SysFont("monospace", 32)
                     # render text
                     self.screen.blit(self.background, (0, 0))
                     winnertext = font.render('{0} has won with {1} points!'.format(fighter.name, fighter.points), 1, (0, 204, 0))
-                    playagaintext = font.render('hit RETURN to play again or ESC to quit', 1, (0, 204, 0))
+                    playagaintext = font.render('Hit RETURN to play again or ESC to quit', 1, (0, 204, 0))
                     self.screen.blit(winnertext, (self.screen.get_width()/8, self.screen.get_height()/3))
                     self.screen.blit(playagaintext, (self.screen.get_width()/8, (self.screen.get_height()/3)*2))
                     pygame.display.flip()
