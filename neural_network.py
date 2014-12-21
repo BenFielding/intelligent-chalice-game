@@ -214,16 +214,6 @@ class Multilayerneuralnetwork(object):
         self.neuralnetwork = Neuralnetwork(7, 7, 3, 0.2, 0.9)
         self.trainnetwork()
 
-    def normalise(self, distance):
-        """
-        Normalise a distance value
-        (1/70 ~ 0.01429)
-        :param distance: (int) The distance value to normalise
-        :return: (float) The normalised value
-        """
-
-        return distance * 0.01429
-
     def trainnetwork(self):
 
         error = float(1)
@@ -289,9 +279,3 @@ class Multilayerneuralnetwork(object):
         for i in range(self.numoutputvalues):
             outputs.append(self.neuralnetwork.getoutput(i))
         return outputs
-
-    def main(self):
-
-        self.testnetwork()
-
-nn = Multilayerneuralnetwork().main()

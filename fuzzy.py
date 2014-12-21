@@ -266,28 +266,28 @@ class Fuzzyocean(object):
         right = 75
         return self.fuzzylogic.membershipupslope(value, left, right)
 
-again = True
-while again:
-    o = random.randrange(101)
-    c = random.randrange(101)
-    e = random.randrange(101)
-    a = random.randrange(101)
-    n = random.randrange(101)
-
-    print 'O: {0}'.format(o)
-    print 'C: {0}'.format(c)
-    print 'E: {0}'.format(e)
-    print 'A: {0}'.format(a)
-    print 'N: {0}'.format(n)
-
-    personality = Fuzzyocean(o, c, e, a, n)
-
-    print 'Aggressiveness: {0}'.format(personality.aggressiveness)
-    print 'Friendliness: {0}'.format(personality.friendliness)
-    print 'Ambitiousness: {0}'.format(personality.ambitiousness)
-
-    if raw_input('Again?').lower == 'n':
-        again = False
+# again = True
+# while again:
+#     o = random.randrange(101)
+#     c = random.randrange(101)
+#     e = random.randrange(101)
+#     a = random.randrange(101)
+#     n = random.randrange(101)
+#
+#     print 'O: {0}'.format(o)
+#     print 'C: {0}'.format(c)
+#     print 'E: {0}'.format(e)
+#     print 'A: {0}'.format(a)
+#     print 'N: {0}'.format(n)
+#
+#     personality = Fuzzyocean(o, c, e, a, n)
+#
+#     print 'Aggressiveness: {0}'.format(personality.aggressiveness)
+#     print 'Friendliness: {0}'.format(personality.friendliness)
+#     print 'Ambitiousness: {0}'.format(personality.ambitiousness)
+#
+#     if raw_input('Again?').lower == 'n':
+#         again = False
 
 
 

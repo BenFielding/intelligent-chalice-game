@@ -12,6 +12,8 @@ try:
     from obstacle import *
     from goal import Goal
     from astar import *
+    from fuzzy import Fuzzyocean
+    from neural_network import Multilayerneuralnetwork
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
@@ -49,40 +51,72 @@ class Game(object):
         # Create astar instance
         self.astar = Astar(self.screen.get_width()/32, self.screen.get_height()/32)
 
+        # Initialise neural network
+        self.neuralnetwork = Multilayerneuralnetwork()
+
         # Initialise goals
         self.createchalices()
         # astar.nodegraph[self.goal.location['x']][self.goal.location['y']] = True
 
         # Initialise obstacles
-        for i in range(0, 900):
+        for i in range(0, 100):
             obstacle = self.createrandomobstacle()
             if obstacle.strength == 'strong':
                 self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.strongmax
             else:
                 self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.weakmax
 
-        # Initialise fighters
-        imagedirectionlist = ['up', 'down', 'left', 'right']
+        self.initialiseplayers(numplayers)
+        self.initialiseenemies(numenemies)
 
-        # Initialise players
+        # Initialise clock
+        self.clock = pygame.time.Clock()
+
+    def initialiseplayers(self, numplayers):
+        imagedirectionlist = ['up', 'down', 'left', 'right']
         self.numplayers = numplayers
         playerimagelist = {}
         for direction in imagedirectionlist:
             playerimagelist[direction] = \
                 '/home/ben/Documents/uni_git/artificial_intelligence/sprites/blue_fighter_{0}.png'.format(direction)
-        self.player1 = self.createfighter('Player 1', playerimagelist, Player)
+        self.player1 = self.createfighter('Player 1', playerimagelist, 'blue', Player)
         self.playerlist.add(self.player1)
         if self.numplayers == 2:
             for direction in imagedirectionlist:
                 playerimagelist[direction] = \
                     '/home/ben/Documents/uni_git/artificial_intelligence/sprites/red_fighter_{0}.png'.format(direction)
-            self.player2 = self.createfighter('Player 2', playerimagelist, Player)
+            self.player2 = self.createfighter('Player 2', playerimagelist, 'red', Player)
             self.playerlist.add(self.player2)
 
-        # Initialise enemies
-        # TODO: Use OCEAN model for enemies?
+    def initialiseenemies(self, numenemies):
+        imagedirectionlist = ['up', 'down', 'left', 'right']
         if numenemies > 0:
             enemycolourlist = ['yellow', 'pink', 'cyan', 'green', 'orange']
+            enemypersonalities = {'yellow': Fuzzyocean(random.randrange(101),
+                                                       random.randrange(101),
+                                                       random.randrange(101),
+                                                       random.randrange(101),
+                                                       random.randrange(101)),
+                                  'pink': Fuzzyocean(random.randrange(101),
+                                                     random.randrange(101),
+                                                     random.randrange(101),
+                                                     random.randrange(101),
+                                                     random.randrange(101)),
+                                  'cyan': Fuzzyocean(random.randrange(101),
+                                                     random.randrange(101),
+                                                     random.randrange(101),
+                                                     random.randrange(101),
+                                                     random.randrange(101)),
+                                  'green': Fuzzyocean(random.randrange(101),
+                                                      random.randrange(101),
+                                                      random.randrange(101),
+                                                      random.randrange(101),
+                                                      random.randrange(101)),
+                                  'orange': Fuzzyocean(random.randrange(101),
+                                                       random.randrange(101),
+                                                       random.randrange(101),
+                                                       random.randrange(101),
+                                                       random.randrange(101))}
             enemycolourcount = {'yellow': 0, 'pink': 0, 'cyan': 0, 'green': 0, 'orange': 0}
             for enemynumber in range(0, numenemies):
                 enemyimagelist = {}
@@ -92,13 +126,21 @@ class Game(object):
                     enemyimagelist[direction] = \
                         '/home/ben/Documents/uni_git/artificial_intelligence/sprites/{0}_fighter_{1}.png' \
                         .format(colour, direction)
-                enemy = self.createfighter('{0} enemy {1}'.format(colour, enemycolourcount[colour]), enemyimagelist, Enemy)
+                enemy = self.createfighter('{0} enemy {1}'.format(colour, enemycolourcount[colour]),
+                                           enemyimagelist, colour, Enemy)
+                enemy.personality = enemypersonalities[colour]
+                enemy.neuralnetwork = self.neuralnetwork
                 self.enemylist.add(enemy)
+        for enemy in self.enemylist:
+            for enemycomparison in self.enemylist:
+                if enemy.colour is enemycomparison.colour:
+                    enemy.friendlist.append(enemycomparison)
+                else:
+                    enemy.enemylist.append(enemycomparison)
+            for player in self.playerlist:
+                enemy.enemylist.append(player)
 
-        # Initialise clock
-        self.clock = pygame.time.Clock()
-
-    def createfighter(self, name, imagelist, fightertype = Player):
+    def createfighter(self, name, imagelist, colour, fightertype = Player):
         """
         Return a Fighter object
 
@@ -107,10 +149,10 @@ class Game(object):
         :param fightertype: (class) Type of fighter
         :return: (Fighter) Fighter object
         """
-        fighter = fightertype(name, imagelist, self.screen.get_width(), self.screen.get_height())
+        fighter = fightertype(name, imagelist, colour, self.screen.get_width(), self.screen.get_height())
         if pygame.sprite.spritecollide(fighter, self.blocklist, False, pygame.sprite.collide_circle):
             fighter.kill()
-            fighter = self.createfighter(name, imagelist, fightertype)
+            fighter = self.createfighter(name, imagelist, colour, fightertype)
         self.fighterlist.add(fighter)
         self.fighterobstaclelist.add(fighter)
         self.blocklist.add(fighter)
@@ -178,10 +220,6 @@ class Game(object):
             goal.kill()
             goal = self.creategoal(goalimagelist, worth, name)
         return goal
-
-
-    # def creategoal(self):
-
 
     def attackobstacle(self, location, direction):
         """
@@ -252,9 +290,11 @@ class Game(object):
             if self.handlekeyevents() == 'quit':
                 return 'no-one', False
 
-            # # Calculate new paths
+            # Calculate new paths
             for enemy in self.enemylist:
-                enemy.path = self.astar.traverse(enemy.location, self.goal.location)
+                enemy.calculatenewtarget(self.chalicelist)
+                if enemy.target:
+                    enemy.path = self.astar.traverse(enemy.location, enemy.target.location)
 
             # Update all fighters
             for fighter in self.fighterlist:

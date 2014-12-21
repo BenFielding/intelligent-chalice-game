@@ -12,8 +12,8 @@ class Player(Fighter):
     Functions: update, calcNewPos
     Attributes: """
 
-    def __init__(self, name, imagelist, screenwidth, screenheight, *groups):
-        super(Player, self).__init__(name, imagelist, screenwidth, screenheight, *groups)
+    def __init__(self, name, imagelist, colour, screenwidth, screenheight, *groups):
+        super(Player, self).__init__(name, imagelist, colour, screenwidth, screenheight, *groups)
         self.directionqueue = LifoQueue()
         self.directiondict = {'up': False, 'down': False, 'left': False, 'right': False}
 

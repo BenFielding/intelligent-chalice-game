@@ -12,7 +12,7 @@ class Fighter(Block):
     Functions: update, calcNewPos
     Attributes:"""
 
-    def __init__(self, name, imagelist, screenwidth, screenheight, *groups):
+    def __init__(self, name, imagelist, colour, screenwidth, screenheight, *groups):
         super(Fighter, self).__init__(imagelist, screenwidth, screenheight, *groups)
         self.name = name
         self.direction = 'down'
@@ -20,6 +20,7 @@ class Fighter(Block):
         self.moving = False
         self.attacking = False
         self.points = 0
+        self.colour = colour
 
     def update(self, magnitude, obstaclelist):
         """
