@@ -2,6 +2,7 @@ try:
     import pygame
     import sys
     import random
+    import Queue
     from fighter import Fighter
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
@@ -18,8 +19,6 @@ class Enemy(Fighter):
         self.path = None
         self.direction = None
         self.moving = True
-        self.friendlist = []
-        self.enemylist = []
         self.neuralnetwork = None
         self.personality = None
         self.target = None
@@ -32,8 +31,12 @@ class Enemy(Fighter):
         :param magnitude: (int) Magnitude of movement
         :param obstaclelist: (pygame.sprite.Group()) List of obstacles which cannot be moved onto
         """
-        self.direction = self.path.get()
-        self.attacking = not super(Enemy, self).update(magnitude, obstaclelist)
+        try:
+            self.direction = self.path.get(False)
+        except Queue.Empty:
+            self.direction = None
+        else:
+            self.attacking = not super(Enemy, self).update(magnitude, obstaclelist)
 
     def calculatenewtarget(self, goallist):
         closestfriend = [99, None]

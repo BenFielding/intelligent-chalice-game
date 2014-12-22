@@ -68,9 +68,23 @@ class Game(object):
 
         self.initialiseplayers(numplayers)
         self.initialiseenemies(numenemies)
+        self.populaterelationships()
 
         # Initialise clock
         self.clock = pygame.time.Clock()
+
+    def populaterelationships(self):
+        for enemy in self.enemylist:
+            for enemycomparison in self.enemylist:
+                if enemycomparison is not enemy and enemy.colour is enemycomparison.colour:
+                    enemy.friendlist.add(enemycomparison)
+                elif enemycomparison is not enemy:
+                    enemy.enemylist.add(enemycomparison)
+            for player in self.playerlist:
+                enemy.enemylist.add(player)
+        for player in self.playerlist:
+            player.enemylist = self.enemylist
+
 
     def initialiseplayers(self, numplayers):
         imagedirectionlist = ['up', 'down', 'left', 'right']
@@ -131,14 +145,6 @@ class Game(object):
                 enemy.personality = enemypersonalities[colour]
                 enemy.neuralnetwork = self.neuralnetwork
                 self.enemylist.add(enemy)
-        for enemy in self.enemylist:
-            for enemycomparison in self.enemylist:
-                if enemycomparison is not enemy and enemy.colour is enemycomparison.colour:
-                    enemy.friendlist.append(enemycomparison)
-                elif enemycomparison is not enemy:
-                    enemy.enemylist.append(enemycomparison)
-            for player in self.playerlist:
-                enemy.enemylist.append(player)
 
     def createfighter(self, name, imagelist, colour, fightertype = Player):
         """
@@ -221,32 +227,46 @@ class Game(object):
             goal = self.creategoal(goalimagelist, worth, name)
         return goal
 
-    def attackobstacle(self, location, direction):
+    def attackorhealblock(self, originator, direction):
         """
-        Attack obstacle in direction from attacker
+        Attack or heal block in direction from originator (depending on if the block is an obstacle, enemy, or friend)
 
-        :param location: (dict) Dictionary of attacker location (keyed with 'x' and 'y')
-        :param direction: (str) Direction of attack from attacker
+        :param originator: (pygame.sprite.Sprite) Sprite originator
+        :param direction: (str) Direction of attack from originator
         """
-        objlocation = {'x': location['x'], 'y': location['y']}
+        targetlocation = {'x': originator.location['x'], 'y': originator.location['y']}
         if direction == 'up':
-            objlocation['y'] = location['y'] - 1
+            targetlocation['y'] = originator.location['y'] - 1
         elif direction == 'down':
-            objlocation['y'] = location['y'] + 1
+            targetlocation['y'] = originator.location['y'] + 1
         elif direction == 'left':
-            objlocation['x'] = location['x'] - 1
+            targetlocation['x'] = originator.location['x'] - 1
         elif direction == 'right':
-            objlocation['x'] = location['x'] + 1
+            targetlocation['x'] = originator.location['x'] + 1
+        else:
+            targetlocation = None
 
-        foundobstacle = None
-        for obstacle in self.obstaclelist:
-            if obstacle.location == objlocation:
-                foundobstacle = obstacle
+        if targetlocation:
+            foundblock = None
+            for block in self.blocklist:
+                if block.location == targetlocation:
+                    foundblock = block
 
-        if foundobstacle:
-            foundobstacle.hp -= 1
-            if foundobstacle.hp <= 0:
-                foundobstacle.kill()
+            if foundblock in self.obstaclelist:
+                foundblock.hp -= 1
+            elif foundblock in originator.enemylist:
+                foundblock.attacked(1)
+            elif foundblock in originator.friendlist:
+                foundblock.healed(1)
+
+            if foundblock and foundblock.hp <= 0:
+                if foundblock in self.fighterlist:
+                    print '{0} has been killed by {1}!'.format(foundblock.name, originator.name)
+                foundblock.kill()
+                self.astar.nodegraph[foundblock.location['x']][foundblock.location['y']].cost = 1
+                if originator in self.enemylist:
+                    originator.target = None
+
 
     def handlekeyevents(self):
         """
@@ -289,31 +309,24 @@ class Game(object):
             # handle all keyevents in the queue, returns false for QUIT
             if self.handlekeyevents() == 'quit':
                 return 'no-one', False
-            print 'Paths'
+
             # Calculate new paths
             for enemy in self.enemylist:
                 enemy.calculatenewtarget(self.chalicelist)
                 if enemy.target:
                     enemy.path = self.astar.traverse(enemy.location, enemy.target.location)
-            print 'Update fighters'
+
             # Update all fighters
             for fighter in self.fighterlist:
-                print 'Nodegraph update'
                 self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = 1
-                print 'Fighter update: {0}'.format(fighter.name)
-                if 'enemy' in fighter.name:
-                    print 'Fighter target: {0}'.format(fighter.target)
-                    print 'Fighter location: {0}'.format(fighter.location)
-                    print 'Fighter target location: {0}'.format(fighter.target.location)
                 fighter.update(1, self.fighterobstaclelist)
-                print 'Nodegraph update'
                 self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = float('inf')
-            print 'Attacks'
+
             # Check if fighters are attacking obstacles, attack if so
             for fighter in self.fighterlist:
                 if fighter.attacking:
-                    self.attackobstacle(fighter.location, fighter.direction)
-            print 'Update obstacles'
+                    self.attackorhealblock(fighter, fighter.direction)
+
             # Update all obstacles
             # self.astar = self.obstaclelist.update(self.astar)
             for obstacle in self.obstaclelist:

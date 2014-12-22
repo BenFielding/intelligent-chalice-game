@@ -21,6 +21,9 @@ class Fighter(Block):
         self.attacking = False
         self.points = 0
         self.colour = colour
+        self.friendlist = pygame.sprite.Group()
+        self.enemylist = pygame.sprite.Group()
+        self.maxhp = 10
 
     def update(self, magnitude, obstaclelist):
         """
@@ -64,3 +67,17 @@ class Fighter(Block):
         elif self.direction == 'right':
             # move right
             return self.rect.move(+(magnitude*32), 0)
+
+    def healed(self, magnitude):
+        if self.hp < self.maxhp:
+            if self.hp + magnitude < self.maxhp:
+                self.hp += magnitude
+            else:
+                self.hp = self.maxhp
+
+    def attacked(self, magnitude):
+        if self.hp > 0:
+            if self.hp - magnitude > 0:
+                self.hp -= magnitude
+            else:
+                self.hp = 0

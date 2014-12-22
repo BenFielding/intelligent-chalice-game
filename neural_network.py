@@ -207,6 +207,13 @@ class Multilayerneuralnetwork(object):
                             [0.67, 0.67, 0.67, 0.1, 0.9, 0.1, 0.1, 0.1, 0.9],
                             [0.67, 0.67, 0.67, 0.1, 0.1, 0.9, 0.1, 0.9, 0.1]]
 
+        self.testset = [[0.9, 0.1, 0.1, 0.67, 0.67, 0.67, 0.9, 0.1, 0.1],
+                        [0.1, 0.9, 0.1, 0.67, 0.67, 0.67, 0.1, 0.9, 0.1],
+                        [0.1, 0.1, 0.9, 0.67, 0.67, 0.67, 0.1, 0.1, 0.9],
+                        [0.67, 0.67, 0.67, 0.9, 0.1, 0.1, 0.1, 0.1, 0.9],
+                        [0.67, 0.67, 0.67, 0.1, 0.9, 0.1, 0.1, 0.1, 0.9],
+                        [0.67, 0.67, 0.67, 0.1, 0.1, 0.9, 0.1, 0.9, 0.1]]
+
         self.numinputs = len(self.trainingset)
         self.numinputvalues = 6
         self.numoutputvalues = 3
@@ -219,7 +226,7 @@ class Multilayerneuralnetwork(object):
         error = float(1)
         count = 0
 
-        while error > 0.05 and count < 50000:
+        while error > 0.001 and count < 50000:
             error = 0
             count += 1
             lastinput = 0
@@ -246,10 +253,10 @@ class Multilayerneuralnetwork(object):
         for i in range(self.numinputs):
             print '{0}: '.format(i + 1),
             for j in range(self.numinputvalues + self.numoutputvalues):
-                print '{0}; '.format(self.trainingset[i][j]),
+                print '{0}; '.format(self.testset[i][j]),
 
             for j in range(self.numinputvalues):
-                    self.neuralnetwork.setinput(j, self.trainingset[i][j])
+                    self.neuralnetwork.setinput(j, self.testset[i][j])
 
             self.neuralnetwork.feedforward()
 
@@ -279,3 +286,6 @@ class Multilayerneuralnetwork(object):
         for i in range(self.numoutputvalues):
             outputs.append(self.neuralnetwork.getoutput(i))
         return outputs
+
+# nn = Multilayerneuralnetwork()
+# nn.testnetwork()

@@ -31,3 +31,4 @@ class Block(pygame.sprite.Sprite):
         self.location = {'x': x, 'y': y}
         self.rect = self.rect.move(x*32, y*32)
         self.radius = 8
+        self.hp = 5
