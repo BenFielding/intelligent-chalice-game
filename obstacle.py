@@ -35,12 +35,12 @@ class Obstacle(Block):
 class Crate(Obstacle):
 
     def __init__(self, imagelist, name, screenwidth, screenheight, *groups):
-        self.strongmax = 100
+        self.strongmax = 10
         super(Crate, self).__init__(imagelist, name, screenwidth, screenheight, *groups)
 
 
 class Rock(Obstacle):
 
     def __init__(self, imagelist, name, screenwidth, screenheight, *groups):
-        self.strongmax = 500
+        self.strongmax = 20
         super(Rock, self).__init__(imagelist, name, screenwidth, screenheight, *groups)

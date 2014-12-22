@@ -50,30 +50,24 @@ class Game(object):
         # Create astar instance
         self.astar = Astar(self.screen.get_width()/32, self.screen.get_height()/32)
 
+        # Assign neuralnetwork instance
         self.neuralnetwork = neuralnetwork
 
         # Initialise goals
-        self.createchalices()
-        # astar.nodegraph[self.goal.location['x']][self.goal.location['y']] = True
-
-        # Initialise obstacles
-        for i in range(0, 100):
-            obstacle = self.createrandomobstacle()
-            if obstacle.strength == 'strong':
-                self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.strongmax
-            else:
-                self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.weakmax
-
+        self.initialisechalices()
+        numobstacles = 200
+        self.initialiseobstacles(numobstacles)
         self.initialiseplayers(numplayers)
         self.initialiseenemies(numenemies)
         self.populaterelationships()
 
-        # Initialise clock
         self.clock = pygame.time.Clock()
-
         self.scorecard = scorecard
 
     def populaterelationships(self):
+        """
+        Populate each fighters friend/enemy (based on colours for autonomous agents) (players are on same team)
+        """
         for enemy in self.enemylist:
             for enemycomparison in self.enemylist:
                 if enemycomparison is not enemy and enemy.colour is enemycomparison.colour:
@@ -88,7 +82,27 @@ class Game(object):
                 if playercomparison is not player:
                     player.friendlist.add(playercomparison)
 
+    def initialiseobstacles(self, numobstacles):
+        """
+        Create and initialise obstacles (crates and rocks).
+
+        :param numobstacles: (int) Number of obstacles to create
+        """
+        for i in range(0, numobstacles):
+            obstacle = self.createrandomobstacle()
+            if obstacle.strength == 'strong':
+                self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.strongmax
+            else:
+                self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.weakmax
+
+
     def initialiseplayers(self, numplayers):
+        """
+        Create and initialise players (red and blue). Players are on the same team.
+        Add to playerlist
+
+        :param numplayers: (int) Number of players to create (1-2)
+        """
         imagedirectionlist = ['up', 'down', 'left', 'right']
         self.numplayers = numplayers
         playerimagelist = {}
@@ -105,6 +119,12 @@ class Game(object):
             self.playerlist.add(self.player2)
 
     def initialiseenemies(self, numenemies):
+        """
+        Create and initialise randomly coloured enemies. (colours = teams)
+        Add to enemylist.
+
+        :param numenemies: (int) Number of enemies to create
+        """
         imagedirectionlist = ['up', 'down', 'left', 'right']
         if numenemies > 0:
             enemycolourlist = ['yellow', 'pink', 'cyan', 'green', 'orange']
@@ -150,7 +170,7 @@ class Game(object):
 
     def createfighter(self, name, imagelist, colour, fightertype = Player):
         """
-        Return a Fighter object
+        Return a Fighter object (recursive until no longer blocked)
 
         :param name: (str) The name of the fighter
         :param imagelist: (dict) Dictionary of image locations (keyed by direction)
@@ -168,7 +188,7 @@ class Game(object):
 
     def createrandomobstacle(self):
         """
-        Return a random child object of Obstacle object
+        Return a random child object of Obstacle object (recursive until no longer blocked)
 
         :return: (Crate or Rock) Crate or Rock (derived from Obstacle) object
         """
@@ -188,10 +208,9 @@ class Game(object):
             self.createrandomobstacle()
         return obstacle
 
-    def createchalices(self):
+    def initialisechalices(self):
         """
         Create chalices and add to chalicelist
-
         """
         for i in range(1):
             chaliceimagelist = {}
@@ -221,6 +240,14 @@ class Game(object):
                                 self.chalicelist.add(self.creategoal(chaliceimagelist, 1, 'wood'))
 
     def creategoal(self, goalimagelist, worth, name):
+        """
+        Create a new goal object (recursive until no longer blocked)
+
+        :param goalimagelist: (Dict) Dict of images to create the goal (should contain one, keyed on 'image'))
+        :param worth: (int) Points value of the goal
+        :param name: (string) Name of the goal
+        :return: (Goal) Goal object
+        """
         goal = Goal(goalimagelist, worth, name, self.screen.get_width(), self.screen.get_height())
         if not pygame.sprite.spritecollide(goal, self.blocklist, False, pygame.sprite.collide_circle):
             self.blocklist.add(goal)
@@ -262,8 +289,6 @@ class Game(object):
                 foundblock.healed(1)
 
             if foundblock and foundblock.hp <= 0:
-                if foundblock in self.fighterlist:
-                    print '{0} has been killed by {1}!'.format(foundblock.name, originator.name)
                 foundblock.kill()
                 self.astar.nodegraph[foundblock.location['x']][foundblock.location['y']].cost = 1
                 if originator in self.enemylist:
@@ -293,11 +318,126 @@ class Game(object):
                                                  'action': eventmapping[event.type]})
         return ''
 
+    def gamewon(self, fighter):
+        """
+        End the game and display winning message/scoreboard.
+        Handle whether or not to play again.
+
+        :param fighter: (Fighter) Winning Fighter object
+        :return: (str) Name of winner, (bool) Whether to play again
+        """
+        font = pygame.font.SysFont("monospace", 32)
+        self.screen.blit(self.background, (0, 0))
+        if fighter:
+            # Update scorecard
+            self.scorecard[fighter.name.partition(' ')[0]] += 1
+            # render text
+            winnertext = font.render('{0} has won with {1} points!'.format(fighter.name, fighter.points), 1, (0, 204, 0))
+        else:
+            winnertext = font.render('No-one has won this round!', 1, (0, 204, 0))
+        scoreslist = []
+        for key, value in self.scorecard.iteritems():
+            if key == 'Player':
+                colours = (51, 51, 255)
+            else:
+                colours = (255, 52, 51)
+            scoreslist.append(font.render('{0} team has {1} points'.format(key, value), 1, colours))
+        playagaintext = font.render('Hit RETURN to play again or ESC to quit', 1, (0, 204, 0))
+        self.screen.blit(winnertext, (self.screen.get_width() / 8, self.screen.get_height() / 10))
+        count = 2
+        for item in scoreslist:
+            self.screen.blit(item, (self.screen.get_width() / 8, self.screen.get_height() / 10 * count))
+            count += 1
+        self.screen.blit(playagaintext, (self.screen.get_width() / 8,
+                                         (self.screen.get_height() / 10) * count))
+        pygame.display.flip()
+        while True:
+            playagain = self.handlekeyevents()
+            if playagain is 'quit':
+                return False
+            elif playagain is 'continue':
+                return True
+
+    def calculatepaths(self):
+        """
+        Use neural network to calculate new target for each autonomous agent.
+        Use Astar algorithm to generate best path to new target for each agent.
+        """
+        for enemy in self.enemylist:
+            enemy.calculatenewtarget(self.chalicelist)
+            if enemy.target:
+                enemy.path = self.astar.traverse(enemy.location, enemy.target.location)
+
+    def updatefighters(self):
+        """
+        Update location of each fighter based on direction.
+        Update Astar nodegraph for new location.
+        """
+        for fighter in self.fighterlist:
+            self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = 1
+            fighter.update(1, self.fighterobstaclelist)
+            self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = float('inf')
+
+    def attacksandheals(self):
+        """
+        Check if fighter is flagged as attacking or healing and trigger action.
+        """
+        for fighter in self.fighterlist:
+            if fighter.attacking:
+                self.attackorhealblock(fighter, fighter.direction)
+
+    def updateobstacles(self):
+        """
+        Update each obstacle, set image based on hp.
+        Update Astar nodegraph with obstacles new cost (based on visuals)
+        """
+        for obstacle in self.obstaclelist:
+            obstacle.update()
+            if obstacle.strength == 'strong':
+                self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.strongmax
+            else:
+                self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.weakmax
+
+    def checkgameendstates(self):
+        """
+        check for any collisions between fighters and chalices.
+        Update fighter points and trigger gamewon if necessary.
+
+        :return: (bool) Whether a fighter has won (bool) Whether or not to play again
+        """
+        # Check if the number of fighters alive is < 2
+        if len(self.fighterlist) == 1:
+            return True, self.gamewon(self.fighterlist[0])
+        elif len(self.fighterlist) == 0:
+            return True, self.gamewon(None)
+        # Check if the number of chalices left is 0
+        if len(self.chalicelist) == 0:
+            points = -1
+            winner = None
+            for fighter in self.fighterlist:
+                if fighter.points > points:
+                    points = fighter.points
+                    winner = fighter
+            return True, self.gamewon(winner)
+        # Check all fighter - chalice gollisions
+        for fighter, chalicecollisionlist in pygame.sprite.groupcollide(self.fighterlist, self.chalicelist,
+                                                                        False, True,
+                                                                        pygame.sprite.collide_circle).iteritems():
+                for chalice in chalicecollisionlist:
+                    fighter.points += chalice.worth
+                if fighter.points >= 40:
+                    return True, self.gamewon(fighter)
+        return False, None
+
+    def blitallblocks(self):
+        for block in self.blocklist:
+            self.screen.blit(self.background, block.rect, block.rect)
+
     def play(self):
         """
         Main game loop, returns the name of the winner and whether or not to play again
 
-        :return: (str, bool) Name of winner, playagain
+        :return: (str) Name of winner, (bool) Whether to play again
         """
         while True:
 
@@ -305,38 +445,23 @@ class Game(object):
             self.clock.tick(10)
 
             # Blit all blocks to the screen
-            for block in self.blocklist:
-                self.screen.blit(self.background, block.rect, block.rect)
+            self.blitallblocks()
 
             # handle all keyevents in the queue, returns false for QUIT
             if self.handlekeyevents() == 'quit':
-                return 'no-one', False
+                return False
 
             # Calculate new paths
-            for enemy in self.enemylist:
-                enemy.calculatenewtarget(self.chalicelist)
-                if enemy.target:
-                    enemy.path = self.astar.traverse(enemy.location, enemy.target.location)
+            self.calculatepaths()
 
             # Update all fighters
-            for fighter in self.fighterlist:
-                self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = 1
-                fighter.update(1, self.fighterobstaclelist)
-                self.astar.nodegraph[fighter.location['x']][fighter.location['y']].cost = float('inf')
+            self.updatefighters()
 
-            # Check if fighters are attacking obstacles, attack if so
-            for fighter in self.fighterlist:
-                if fighter.attacking:
-                    self.attackorhealblock(fighter, fighter.direction)
+            # Perform attacks and heals
+            self.attacksandheals()
 
             # Update all obstacles
-            # self.astar = self.obstaclelist.update(self.astar)
-            for obstacle in self.obstaclelist:
-                obstacle.update()
-                if obstacle.strength == 'strong':
-                    self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.strongmax
-                else:
-                    self.astar.nodegraph[obstacle.location['x']][obstacle.location['y']].cost = obstacle.weakmax
+            self.updateobstacles()
 
             # Draw all blocks
             self.blocklist.draw(self.screen)
@@ -344,37 +469,7 @@ class Game(object):
             # Update the entire surface
             pygame.display.flip()
 
-            # Check for fighter collision with the goal
-            for fighter, chalicecollisionlist in pygame.sprite.groupcollide(self.fighterlist, self.chalicelist,
-                                                        False, True, pygame.sprite.collide_circle).iteritems():
-                for chalice in chalicecollisionlist:
-                    fighter.points += chalice.worth
-                if fighter.points >= 40:
-                    font = pygame.font.SysFont("monospace", 32)
-                    # Update scorecard
-                    self.scorecard[fighter.name.partition(' ')[0]] += 1
-                    # render text
-                    self.screen.blit(self.background, (0, 0))
-                    winnertext = font.render('{0} has won with {1} points!'.format(fighter.name, fighter.points), 1, (0, 204, 0))
-                    scoreslist = []
-                    for key, value in self.scorecard.iteritems():
-                        if key == 'Player':
-                            colours = (51, 51, 255)
-                        else:
-                            colours = (255, 52, 51)
-                        scoreslist.append(font.render('{0} team has {1} points'.format(key, value), 1, colours))
-                    playagaintext = font.render('Hit RETURN to play again or ESC to quit', 1, (0, 204, 0))
-                    self.screen.blit(winnertext, (self.screen.get_width() / 8, self.screen.get_height() / 10))
-                    count = 2
-                    for item in scoreslist:
-                        self.screen.blit(item, (self.screen.get_width() / 8, self.screen.get_height() / 10 * count))
-                        count += 1
-                    self.screen.blit(playagaintext, (self.screen.get_width() / 8,
-                                                     (self.screen.get_height() / 10) * count))
-                    pygame.display.flip()
-                    while True:
-                        playagain = self.handlekeyevents()
-                        if playagain is 'quit':
-                            return fighter.name, False
-                        elif playagain is 'continue':
-                            return fighter.name, True
+            # Check for the end of a game
+            winner, playagain = self.checkgameendstates()
+            if winner:
+                return playagain

@@ -23,7 +23,6 @@ def main():
     if numplayers == 2:
         'Player two will be red'
 
-    #while numenemies not in range(0, 6):
     while numenemies not in range(0, 9999999):
         try:
             numenemies = int(raw_input('Please enter the number of enemies:'))
@@ -42,8 +41,7 @@ def main():
     while playagain:
         print
         game = Game(numplayers, numenemies, neuralnetwork, scorecard)
-        winner, playagain = game.play()
-        print '{0} won this round!'.format(winner)
+        playagain = game.play()
 
 if __name__ == '__main__':
     main()
