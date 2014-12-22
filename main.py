@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from neural_network import Multilayerneuralnetwork
 
 try:
     import sys
@@ -29,13 +30,18 @@ def main():
         except ValueError:
             print 'Invalid entry'
     print
+    print 'Training neural network...'
+    print
+    neuralnetwork = Multilayerneuralnetwork()
+
     raw_input('Hit RETURN to start the game')
 
     playagain = True
+    scorecard = {'Player': 0, 'yellow': 0, 'pink': 0, 'cyan': 0, 'green': 0, 'orange': 0}
 
     while playagain:
         print
-        game = Game(numplayers, numenemies)
+        game = Game(numplayers, numenemies, neuralnetwork, scorecard)
         winner, playagain = game.play()
         print '{0} won this round!'.format(winner)
 

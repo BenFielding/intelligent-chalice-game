@@ -13,7 +13,6 @@ try:
     from goal import Goal
     from astar import *
     from fuzzy import Fuzzyocean
-    from neural_network import Multilayerneuralnetwork
 except ImportError, error:
     print "Couldn't load module:\n {}".format(error)
     sys.exit(2)
@@ -21,7 +20,7 @@ except ImportError, error:
 
 class Game(object):
 
-    def __init__(self, numplayers, numenemies):
+    def __init__(self, numplayers, numenemies, neuralnetwork, scorecard):
         # Initialise screen
         pygame.init()
         self.screen = pygame.display.set_mode((1024, 1024))
@@ -51,8 +50,7 @@ class Game(object):
         # Create astar instance
         self.astar = Astar(self.screen.get_width()/32, self.screen.get_height()/32)
 
-        # Initialise neural network
-        self.neuralnetwork = Multilayerneuralnetwork()
+        self.neuralnetwork = neuralnetwork
 
         # Initialise goals
         self.createchalices()
@@ -73,6 +71,8 @@ class Game(object):
         # Initialise clock
         self.clock = pygame.time.Clock()
 
+        self.scorecard = scorecard
+
     def populaterelationships(self):
         for enemy in self.enemylist:
             for enemycomparison in self.enemylist:
@@ -84,7 +84,9 @@ class Game(object):
                 enemy.enemylist.add(player)
         for player in self.playerlist:
             player.enemylist = self.enemylist
-
+            for playercomparison in self.playerlist:
+                if playercomparison is not player:
+                    player.friendlist.add(playercomparison)
 
     def initialiseplayers(self, numplayers):
         imagedirectionlist = ['up', 'down', 'left', 'right']
@@ -347,17 +349,28 @@ class Game(object):
                                                         False, True, pygame.sprite.collide_circle).iteritems():
                 for chalice in chalicecollisionlist:
                     fighter.points += chalice.worth
-                    print '{0} grabbed a {1} chalice for a total of {2} points!'.format(fighter.name,
-                                                                                        chalice.name, fighter.points)
-
                 if fighter.points >= 40:
                     font = pygame.font.SysFont("monospace", 32)
+                    # Update scorecard
+                    self.scorecard[fighter.name.partition(' ')[0]] += 1
                     # render text
                     self.screen.blit(self.background, (0, 0))
                     winnertext = font.render('{0} has won with {1} points!'.format(fighter.name, fighter.points), 1, (0, 204, 0))
+                    scoreslist = []
+                    for key, value in self.scorecard.iteritems():
+                        if key == 'Player':
+                            colours = (51, 51, 255)
+                        else:
+                            colours = (255, 52, 51)
+                        scoreslist.append(font.render('{0} team has {1} points'.format(key, value), 1, colours))
                     playagaintext = font.render('Hit RETURN to play again or ESC to quit', 1, (0, 204, 0))
-                    self.screen.blit(winnertext, (self.screen.get_width()/8, self.screen.get_height()/3))
-                    self.screen.blit(playagaintext, (self.screen.get_width()/8, (self.screen.get_height()/3)*2))
+                    self.screen.blit(winnertext, (self.screen.get_width() / 8, self.screen.get_height() / 10))
+                    count = 2
+                    for item in scoreslist:
+                        self.screen.blit(item, (self.screen.get_width() / 8, self.screen.get_height() / 10 * count))
+                        count += 1
+                    self.screen.blit(playagaintext, (self.screen.get_width() / 8,
+                                                     (self.screen.get_height() / 10) * count))
                     pygame.display.flip()
                     while True:
                         playagain = self.handlekeyevents()

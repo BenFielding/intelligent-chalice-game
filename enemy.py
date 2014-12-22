@@ -16,7 +16,6 @@ class Enemy(Fighter):
 
     def __init__(self, name, imagelist, colour, screenwidth, screenheight, *groups):
         super(Enemy, self).__init__(name, imagelist, colour, screenwidth, screenheight, *groups)
-        self.path = None
         self.direction = None
         self.moving = True
         self.neuralnetwork = None
@@ -39,30 +38,34 @@ class Enemy(Fighter):
             self.attacking = not super(Enemy, self).update(magnitude, obstaclelist)
 
     def calculatenewtarget(self, goallist):
-        closestfriend = [99, None]
+        closestfriend = [99, 99, None]
         for friend in self.friendlist:
             distancetofriend = self.normaliseddistancetotarget(friend)
             if distancetofriend < closestfriend[0]:
-                closestfriend = [distancetofriend, friend]
+                closestfriend = [distancetofriend, self.normalisedhp(friend.hp), friend]
 
-        closestenemy = [99, None]
+        closestenemy = [99, 99, None]
         for enemy in self.enemylist:
             distancetoenemy = self.normaliseddistancetotarget(enemy)
             if distancetoenemy < closestenemy[0]:
-                closestenemy = [distancetoenemy, enemy]
+                closestenemy = [distancetoenemy, self.normalisedhp(enemy.hp), enemy]
 
-        closestgoal = [99, None]
+        closestgoal = [99, 99, None]
         for goal in goallist:
             distancetogoal = self.normaliseddistancetotarget(goal)
             if distancetogoal < closestgoal[0]:
-                closestgoal = [distancetogoal, goal]
+                closestgoal = [distancetogoal, self.normalisedgoalworth(goal.worth), goal]
 
         outcome = self.neuralnetwork.recallnetwork([self.personality.aggressiveness,
                                                    self.personality.friendliness,
                                                    self.personality.ambitiousness,
+                                                   self.hp,
                                                    closestenemy[0],
+                                                   closestenemy[1],
                                                    closestfriend[0],
-                                                   closestgoal[0]])
+                                                   closestfriend[1],
+                                                   closestgoal[0],
+                                                   closestgoal[1]])
         max = -1
         position = 0
         for count in range(len(outcome)):
@@ -71,11 +74,11 @@ class Enemy(Fighter):
                 position = count
 
         if position == 0:
-            self.target = closestenemy[1]
+            self.target = closestenemy[2]
         elif position == 1:
-            self.target = closestfriend[1]
+            self.target = closestfriend[2]
         elif position == 2:
-            self.target = closestgoal[1]
+            self.target = closestgoal[2]
         else:
             self.target = None
 
@@ -87,5 +90,24 @@ class Enemy(Fighter):
 
         :return: (float) Normalised (between 0 and 1) manhattan distance to target
         """
-
         return abs(self.location['x'] - target.location['x']) + abs(self.location['y'] - target.location['y']) * 0.01429
+
+    def normalisedhp(self, hp):
+        """
+        Return the normalised hitpoint value
+        Normalise method:
+        (1/15 ~= 0.06667)
+
+        :return: (float) Normalised (between 0 and 1) hitpoint value
+        """
+        return hp * 0.06667
+
+    def normalisedgoalworth(self, goalworth):
+        """
+        Return the normalised goal worth
+        Normalise method:
+        (1/32 ~= 0.03125)
+
+        :return: (float) Normalised (between 0 and 1) goal worth
+        """
+        return goalworth * 0.03125
