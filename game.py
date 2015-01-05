@@ -425,7 +425,7 @@ class Game(object):
                                                                         pygame.sprite.collide_circle).iteritems():
                 for chalice in chalicecollisionlist:
                     fighter.points += chalice.worth
-                if fighter.points >= 40:
+                if fighter.points >= 30:
                     return True, self.gamewon(fighter)
         return False, None
 

@@ -16,6 +16,7 @@ class Player(Fighter):
         super(Player, self).__init__(name, imagelist, colour, screenwidth, screenheight, *groups)
         self.directionqueue = LifoQueue()
         self.directiondict = {'up': False, 'down': False, 'left': False, 'right': False}
+        self.hp = 10
 
     def handlekeyevent(self, keyevent):
         """

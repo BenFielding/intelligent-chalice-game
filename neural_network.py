@@ -76,7 +76,7 @@ class Neuronlayer(object):
                     action += self.parentlayer.neuronvalues[i] * self.parentlayer.weights[i][j]
                 action += self.parentlayer.biasvalues[j] * self.parentlayer.biasweights[j]
                 self.neuronvalues[j] = self.sigmoid(action)
-
+#
     def calculateerrors(self):
         """
         Calculate errors for this run (not input layer)
@@ -227,7 +227,15 @@ class Multilayerneuralnetwork(object):
 
             [0.67, 0.67, 0.67, 0.1, 0.32, 0.67, 0.32, 0.67, 0.32, 0.67, 0.1, 0.9, 0.1],
             [0.67, 0.67, 0.67, 0.5, 0.32, 0.67, 0.32, 0.67, 0.32, 0.67, 0.5, 0.5, 0.9],
-            [0.67, 0.67, 0.67, 0.9, 0.32, 0.67, 0.32, 0.67, 0.32, 0.67, 0.7, 0.5, 0.5]
+            [0.67, 0.67, 0.67, 0.9, 0.32, 0.67, 0.32, 0.67, 0.32, 0.67, 0.7, 0.5, 0.5],
+
+            [0.32, 0.86, 0.47, 0.49, 0.43, 0.55, 0.39, 0.72, 0.50, 0.71, 0.4, 0.7, 0.9],
+            [0.87, 0.74, 0.46, 0.5, 0.30, 0.48, 0.29, 0.74, 0.10, 0.43, 0.6, 0.5, 0.8],
+            [0.64, 0.55, 0.79, 0.78, 0.27, 0.54, 0.29, 0.58, 0.48, 0.65, 0.5, 0.8, 0.7],
+
+            [0.67, 0.57, 0.71, 0.68, 0.32, 0.25, 0.59, 0.72, 0.50, 0.71, 0.8, 0.4, 0.7],
+            [0.59, 0.63, 0.39, 0.71, 0.56, 0.69, 0.29, 0.17, 0.38, 0.21, 0.4, 0.8, 0.6],
+            [0.49, 0.50, 0.39, 0.69, 0.76, 0.59, 0.68, 0.67, 0.48, 0.65, 0.6, 0.5, 0.8]
         ]
 
         self.testset = [
@@ -260,7 +268,7 @@ class Multilayerneuralnetwork(object):
         error = float(1)
         count = 0
 
-        while error > 0.001 and count < 50000:
+        while error > 0.002 and count < 50000:
             error = 0
             count += 1
             lastinput = 0
