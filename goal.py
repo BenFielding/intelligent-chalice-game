@@ -1,10 +1,7 @@
-try:
-    import sys
-    import random
-    from block import Block
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import sys
+import random
+from block import Block
+
 
 class Goal(Block):
     """An obstacle, inherits from block

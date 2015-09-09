@@ -1,12 +1,9 @@
-try:
-    import pygame
-    import sys
-    import random
-    import Queue
-    from fighter import Fighter
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import pygame
+import sys
+import random
+import Queue
+from fighter import Fighter
+
 
 class Enemy(Fighter):
     """An enemy character, inherits from Fighter

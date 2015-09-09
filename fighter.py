@@ -1,10 +1,7 @@
-try:
-    import pygame
-    import sys
-    from block import Block
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import pygame
+import sys
+from block import Block
+
 
 class Fighter(Block):
     """The base class for all fighters

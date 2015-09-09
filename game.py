@@ -1,21 +1,17 @@
-try:
-    import pygame
-    import sys
-    import random
-    from itertools import cycle
-    from pygame.locals import *
-    from Queue import *
-    from block import Block
-    from fighter import Fighter
-    from enemy import Enemy
-    from player import Player
-    from obstacle import *
-    from goal import Goal
-    from astar import *
-    from fuzzy import Fuzzyocean
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import pygame
+import sys
+import random
+from itertools import cycle
+from pygame.locals import *
+from Queue import *
+from block import Block
+from fighter import Fighter
+from enemy import Enemy
+from player import Player
+from obstacle import *
+from goal import Goal
+from astar import *
+from fuzzy import Fuzzyocean
 
 
 class Game(object):

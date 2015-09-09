@@ -1,9 +1,5 @@
-try:
-    import sys
-    from Queue import *
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import sys
+from Queue import *
 
 
 class Node(object):

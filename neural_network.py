@@ -1,10 +1,6 @@
-try:
-    import sys
-    import random
-    import math
-except ImportError, err:
-    print "Couldn't load module:\n {}".format(err)
-    sys.exit(2)
+import sys
+import random
+import math
 
 
 class Neuronlayer(object):

@@ -1,9 +1,6 @@
-try:
-    import sys
-    import random
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import sys
+import random
+
 
 class Fuzzylogic(object):
 

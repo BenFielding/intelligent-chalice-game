@@ -1,12 +1,8 @@
 #!/usr/bin/python
-from neural_network import Multilayerneuralnetwork
 
-try:
-    import sys
-    from game import Game
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import sys
+from game import Game
+from neural_network import Multilayerneuralnetwork
 
 
 def main():

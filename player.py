@@ -1,10 +1,7 @@
-try:
-    import sys
-    from Queue import LifoQueue
-    from fighter import Fighter
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import sys
+from Queue import LifoQueue
+from fighter import Fighter
+
 
 class Player(Fighter):
     """A Player character, inherits from Fighter

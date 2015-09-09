@@ -1,9 +1,6 @@
-try:
-    import pygame
-    import sys
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import pygame
+import sys
+
 
 class Projectile(pygame.sprite.Sprite):
     """The base class for all projectiles

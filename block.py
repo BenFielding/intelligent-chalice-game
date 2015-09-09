@@ -1,10 +1,6 @@
-try:
-    import pygame
-    import sys
-    import random
-except ImportError, error:
-    print "Couldn't load module:\n {}".format(error)
-    sys.exit(2)
+import pygame
+import sys
+import random
 
 
 class Block(pygame.sprite.Sprite):
