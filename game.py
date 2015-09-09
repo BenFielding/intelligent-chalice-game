@@ -403,7 +403,7 @@ class Game(object):
         """
         # Check if the number of fighters alive is < 2
         if len(self.fighterlist) == 1:
-            return True, self.gamewon(self.fighterlist[0])
+            return True, self.gamewon(self.fighterlist.sprites()[0])
         elif len(self.fighterlist) == 0:
             return True, self.gamewon(None)
         # Check if the number of chalices left is 0
