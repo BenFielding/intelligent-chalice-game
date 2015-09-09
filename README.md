@@ -1,4 +1,7 @@
 #Intelligent Chalice Game
+
+![example screenshot of gameplay](https://github.com/BenFielding/intelligent-chalice-game/raw/master/example_videos/intelligent-chalice-screenshot.png "Example screenshot")
+
 ##Overview
 Demonstrates various algorithm implementations, notably; **A\* pathfinding**, **Multilayer perceptron** (neural network), and **Fuzzy logic**.
 

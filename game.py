@@ -20,7 +20,7 @@ class Game(object):
         # Initialise screen
         pygame.init()
         self.screen = pygame.display.set_mode((1024, 1024))
-        pygame.display.set_caption('Artificial intelligence assignment')
+        pygame.display.set_caption('Intelligent Chalice Game')
 
         # Fill background
         self.background = pygame.Surface(self.screen.get_size())
