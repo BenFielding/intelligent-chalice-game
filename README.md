@@ -30,11 +30,16 @@ Generating the following outputs:
   0. Chance of pursuing nearest goal
 
 
+Enemies will calculate the most optimal path to the determined goal, be it an enemy, a friend, or a chalice. Modifying the number of obstacles on the board can demonstrate this behaviour by forcing the enemies to break blocks, thereby choosing the path of least resistance (weakest blocks), this isn't always obvious to a human player and can be surprising.
+
+
 **Some intelligent agent behaviour can be seen in the example videos.**
 
 ##Gameplay
 
 The aim of the game is to achieve the goal number of points (42) before anyone else, or be the last agent standing.
+The dark blue agent is always player 1, whilst the dark red agent is always player 2.
+Agents of the same colour are on the same team and will exhibit the same personalities traits.
 
 Enemy agents can be attacked, draining their hitpoints.
 Friendly agents can be healed, increasing their hitpoints up to a maximum.
